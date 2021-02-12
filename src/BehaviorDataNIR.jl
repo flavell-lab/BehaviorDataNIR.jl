@@ -11,6 +11,7 @@ include("cam_data.jl")
 export zero_stage,
     impute_stage,
     speed,
+    Δpos_angle,
     angular_velocity,
 # unit
     unit_stage_unit_to_mm,
