@@ -10,15 +10,18 @@ function impute_stage(x)
 end
 
 function speed(x, y; lag::Int, fps=FLIR_FPS)
-    Δx = diff_lag(x, lag=lag)
-    Δy = diff_lag(y, lag=lag)
+    Δx, Δy = diff_lag.([x, y], lag=lag)
     Δt = lag * 1 / fps
     
     sqrt.(Δx .^2 .+ Δy .^2) / Δt
 end
 
+function Δpos_angle(Δx, Δy)
+    atan.(Δy ./ Δx)
+end
+
 function angular_velocity(x, y; lag::Int, fps=FLIR_FPS)
-    Δx = diff_lag(x, lag=lag)
-    Δy = diff_lag(y, lag=lag)
-    atan.(Δy ./ Δx) / ((1 / fps) * lag) # rad/s
+    Δx, Δy = diff_lag.([x, y], lag=lag)
+    
+    Δpos_angle(Δx, Δy) / ((1 / fps) * lag) # rad/s
 end
