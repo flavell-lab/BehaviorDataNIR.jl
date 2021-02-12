@@ -5,3 +5,4 @@ version = "0.1.0"
 
 [deps]
 Impute = "f7bf1975-0170-51b9-8c5f-a992d46b9575"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
