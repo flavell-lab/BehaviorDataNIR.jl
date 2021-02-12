@@ -1,0 +1,7 @@
+name = "BehaviorDataNIR"
+uuid = "3f411c05-961e-46d9-b20c-1ef355bc3583"
+authors = ["urlicht <jungsu93@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+Impute = "f7bf1975-0170-51b9-8c5f-a992d46b9575"
