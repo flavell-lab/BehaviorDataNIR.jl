@@ -1,6 +1,10 @@
 module BehaviorDataNIR
 
-using Impute, LinearAlgebra
+using Impute, LinearAlgebra, PyCall, PyPlot, HDF5, Images, Statistics, ProgressMeter,  FlavellBase, VideoIO
+
+ski_morphology = pyimport_conda("skimage.morphology", "scikit-image")
+np = pyimport("numpy")
+cv2 = pyimport("cv2");
 
 include("unit.jl")
 include("util.jl")
@@ -21,5 +25,12 @@ export zero_stage,
     nmp_vec,
 # worm_segmentation.jl
     standardize
+    reshape_array
+    eval_unet
+    create_model
+    unet
+    overlay_images
+    save_images
+    encode_movie
 
 end # module
