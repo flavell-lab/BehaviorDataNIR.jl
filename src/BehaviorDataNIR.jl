@@ -24,13 +24,13 @@ export zero_stage,
 # cam_data.jl
     nmp_vec,
 # worm_segmentation.jl
-    standardize
-    reshape_array
-    eval_unet
-    create_model
-    unet
-    overlay_images
-    save_images
+    standardize,
+    reshape_array,
+    eval_unet,
+    create_model,
+    unet,
+    overlay_images,
+    save_images,
     encode_movie
 
 end # module
