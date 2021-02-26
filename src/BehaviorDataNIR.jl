@@ -2,10 +2,6 @@ module BehaviorDataNIR
 
 using Impute, LinearAlgebra, PyCall, PyPlot, HDF5, Images, Statistics, ProgressMeter,  FlavellBase, VideoIO
 
-ski_morphology = pyimport_conda("skimage.morphology", "scikit-image")
-np = pyimport("numpy")
-cv2 = pyimport("cv2");
-
 include("unit.jl")
 include("util.jl")
 include("stage_data.jl")
@@ -29,6 +25,10 @@ export zero_stage,
     nmp_vec
 
 # TODO: move to UNet2D library
+# ski_morphology = pyimport_conda("skimage.morphology", "scikit-image")
+# np = pyimport("numpy")
+# cv2 = pyimport("cv2");
+
 # # worm_segmentation.jl
 #     standardize,
 #     reshape_array,
