@@ -1,12 +1,5 @@
-function zero_stage(pos_stage)
-    x, y = pos_stage[1,:], pos_stage[2,:]
-    @assert(all(.!isnan.([x[1], y[1]])))
-
-    x .- x[1], y .- y[1]
-end
-
 """
-    impute_stage(x::Array{<:AbstractFloat,1})
+    zero_stage(x::Array{<:AbstractFloat,2})
 
 Sets the first time point to start at 0, 0
 
@@ -14,15 +7,16 @@ Arguments
 ---------
 * `pos_stage`: (x,y) location, 2 by T array where T is len(time points)
 """
-function impute_stage(x::Array{<:AbstractFloat,1})
+function zero_stage(pos_stage::Array{<:AbstractFloat,2})
     x, y = pos_stage[1,:], pos_stage[2,:]
     @assert(all(.!isnan.([x[1], y[1]])))
-    
+
     x .- x[1], y .- y[1]
 end
 
+
 """
-    impute_stage(x::Array{<:AbstractFloat,1})
+    impute_list(x::Array{<:AbstractFloat,1})
 
 Imputes missing data (NaN or missing) with interpolation
 
@@ -30,8 +24,39 @@ Arguments
 ---------
 * `x`: 1D data to impute
 """
-function impute_stage(x::Array{<:AbstractFloat,1})
-    convert.(eltype(x), Impute.interp(replace(x, NaN=>missing)))
+function impute_list(x::Array{<:AbstractFloat,1})
+#     convert.(eltype(x), Impute.interp(replace(x, NaN=>missing)))
+    imputed_lst = Impute.interp(replace(x, NaN=>missing))
+    
+    if typeof(imputed_lst[1]) == Missing
+        popfirst!(imputed_lst)
+    end
+    
+    if typeof(imputed_lst[end]) == Missing
+        pop!(imputed_lst)
+    end
+    
+    # TODO still a possibility that there are more missing elements, since if start out or end with a series of missing
+    # probably should save out the number of frames skipped in the beginning and end
+    
+    convert.(eltype(x), imputed_lst)
+end
+
+
+"""
+    impute_stage(x::Array{<:AbstractFloat,2})
+
+Imputes missing 2D stage data (NaN or missing) with interpolation
+
+Arguments
+---------
+* `pos_stage`: (x,y) location, 2 by T array where T is len(time points)
+"""
+function impute_stage(pos_stage::Array{<:AbstractFloat,2})
+    x_imp = impute_arr(pos_stage[1, :])
+    y_imp = impute_arr(pos_stage[2, :])
+
+    convert(typeof(pos_stage), (hcat(x_imp,y_imp))')
 end
 
 """
