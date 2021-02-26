@@ -53,8 +53,8 @@ Arguments
 * `pos_stage`: (x,y) location, 2 by T array where T is len(time points)
 """
 function impute_stage(pos_stage::Array{<:AbstractFloat,2})
-    x_imp = impute_arr(pos_stage[1, :])
-    y_imp = impute_arr(pos_stage[2, :])
+    x_imp = impute_list(pos_stage[1, :])
+    y_imp = impute_list(pos_stage[2, :])
 
     convert(typeof(pos_stage), (hcat(x_imp,y_imp))')
 end
