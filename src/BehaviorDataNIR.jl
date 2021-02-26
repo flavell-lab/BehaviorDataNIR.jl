@@ -22,6 +22,7 @@ export zero_stage,
     unit_stage_unit_to_mm,
     unit_bfs_pix_to_mm,
 # cam_data.jl
+    read_hdf5,
     nmp_vec
 
 # TODO: move to UNet2D library
