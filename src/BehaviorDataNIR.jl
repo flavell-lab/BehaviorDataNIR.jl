@@ -10,6 +10,7 @@ include("worm_segmentation.jl")
 
 # stage_data.jl
 export zero_stage,
+    impute_list,
     impute_stage,
     speed,
     Δpos_angle,
