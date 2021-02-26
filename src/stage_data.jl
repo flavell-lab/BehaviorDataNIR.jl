@@ -91,3 +91,74 @@ function angular_velocity(x, y; lag::Int, fps=FLIR_FPS)
     
     angular_velocity(Δθ, Δt) # rad/s
 end
+
+function ang_btw_vec(v1::Array{Float64,2}, v2::Array{Float64,2})
+    timept = min(size(v1, 2), size(v2, 2))
+    
+    # initialize
+    dotprd = zeros(timept) # dot product
+    ang_btw_v = zeros(timept) # angle between vectors
+
+    # calculate angle betweeen vectors
+    for i in 1 : timept
+        dotprd[i] = dot(v1[1 : 2, i], v2[1 : 2, i]) # calculate the dot product of two vectors
+        ang_btw_v[i] = acos(dotprd[i]/(v2[3, i] * v1[3, i])) # calculate angle in radians
+    end
+    
+    ang_btw_v
+end
+
+
+# If a to b vector, make into b to a vector, save out the magnitude as well
+function reverse_vec(v::Array{<:AbstractFloat,2})
+    reversed_v = zeros(3, size(v1, 2))
+    reversed_v[1, :] = - v[1, :]
+    reversed_v[2, :] = - v[2, :]
+    reversed_v[3, :] = v[3, :] # magnitude stays the same
+    
+    reversed_v
+end
+
+# defining the worm movement vector, by using stage coordinate changes
+function mov_vec(x, y, lag::Int)
+    timept = size(x, 2)
+    mov_v = zeros(2, timept - lag)
+    mov_v[1, :] = x[lag_index, 1 : end - lag] 
+    mov_v[2, :] = y[lag_index, 1 : end - lag]
+
+    mov_v
+end
+
+# A = [0.9 0.1; 0.9 0.1] # transition matrix
+# B = [Normal(170,10), Normal(13,5)] # observation dist, mean and variance
+function cluster(list::Array{<:AbstractFloat,1}, A, B)
+    hmm = HMM(A, B)
+    clustered_list = viterbi(hmm, list)
+
+    clustered_list
+end
+
+
+## TODO: tried to make it simpler by doing this, but error saying that the value inside acos is > 1
+# function magnitude_vec(v::Array{<:AbstractFloat,2})
+#     magnitude_vec = sqrt.(v[1, :] .^ 2 .+ v[2, :] .^ 2)
+    
+#     magnitude_vec
+# end
+
+# # v1 and v2 have to be same dimension array
+# function test_ang_btw_vec(v1::Array{<:AbstractFloat,2}, v2::Array{<:AbstractFloat,2})
+#     dotprd = sum(dot.(v1, v2), dims=1) # calculate the dot product of two vectors
+#     ang_btw_v = acos.(dotprd ./ (magnitude_vec(v1) .* magnitude_vec(v2))) # calculate angle in radians
+    
+#     ang_btw_v
+# end
+
+# # cut the smaller dim vector
+# function match_dim(v1::Array{<:AbstractFloat,2}, v2::Array{<:AbstractFloat,2})
+#     min_len = min(size(v1,2), size(v2,2))
+#     v1 = Array((hcat(v1[1, 1: min_len], v1[2, 1: min_len]))')
+#     v2 = Array((hcat(v2[1, 1: min_len], v2[2, 1: min_len]))')
+    
+#     v1, v2
+# end

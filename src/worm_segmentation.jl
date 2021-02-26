@@ -72,8 +72,8 @@ function overlay_images(image::Array{Float64,2}, segmentation::BitArray{2}, skel
     seg = np.float32(segmentation)
     skl = np.float32(skeleton)
     
-    added_image = cv2.addWeighted(img, img_alpha, seg, seg_alpha, 0) # can adjust numbers here to change overlay
-    final_image = cv2.addWeighted(added_image, 1, skl_alpha, 0.9, 0)
+    added_image = cv2.addWeighted(img, img_alpha, seg, seg_alpha, 0)
+    final_image = cv2.addWeighted(added_image, 1, skl, skl_alpha, 0)
     
     return final_image
 end

@@ -18,19 +18,25 @@ export zero_stage,
     speed,
     Δpos_angle,
     angular_velocity,
+    ang_btw_vec,
+    reverse_vec,
+    mov_vec,
+    cluster,
 # unit.jl
     unit_stage_unit_to_mm,
     unit_bfs_pix_to_mm,
 # cam_data.jl
-    nmp_vec,
-# worm_segmentation.jl
-    standardize,
-    reshape_array,
-    eval_unet,
-    create_model,
-    unet,
-    overlay_images,
-    save_images,
-    encode_movie
+    nmp_vec
+
+# TODO: move to UNet2D library
+# # worm_segmentation.jl
+#     standardize,
+#     reshape_array,
+#     eval_unet,
+#     create_model,
+#     unet,
+#     overlay_images,
+#     save_images,
+#     encode_movie
 
 end # module
