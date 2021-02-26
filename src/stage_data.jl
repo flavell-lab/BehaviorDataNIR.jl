@@ -95,6 +95,11 @@ function speed(x, y; lag::Int, fps=FLIR_FPS)
     speed(Δx, Δy, Δt)
 end
 
+function time_axis(list; lag=1, fps=FLIR_FPS)
+    num_frame = maximum(size(list))
+    collect(1 : num_frame - lag) * 1 / fps
+end
+
 function Δpos_angle(Δx, Δy)
     atan.(Δy ./ Δx)
 end
