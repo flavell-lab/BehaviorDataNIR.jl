@@ -122,7 +122,7 @@ function angular_velocity(x, y; lag::Int, fps=FLIR_FPS)
     angular_velocity(Δθ, Δt) # rad/s
 end
 
-function ang_btw_vec(v1::Array{Float64,2}, v2::Array{Float64,2})
+function ang_btw_vec(v1::Array{<:AbstractFloat,2}, v2::Array{<:AbstractFloat,2})
     timept = min(size(v1, 2), size(v2, 2))
     
     # initialize
