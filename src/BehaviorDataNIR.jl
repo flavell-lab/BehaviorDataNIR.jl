@@ -25,7 +25,10 @@ export zero_stage,
     unit_bfs_pix_to_mm,
 # cam_data.jl
     read_hdf5,
-    nmp_vec
+    nmp_vec,
+# util.jl
+    diff_lag,
+    vec_ang
 
 # TODO: move to UNet2D library
 # ski_morphology = pyimport_conda("skimage.morphology", "scikit-image")

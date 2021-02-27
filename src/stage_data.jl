@@ -95,7 +95,7 @@ function speed(x, y; lag::Int, fps=FLIR_FPS)
     speed(Δx, Δy, Δt)
 end
 
-function time_axis(list; lag=1, fps=FLIR_FPS)
+function time_axis(list::AbstractVector; lag=1, fps=FLIR_FPS)
     num_frame = maximum(size(list))
     collect(1 : num_frame - lag) * 1 / fps
 end
@@ -105,7 +105,7 @@ function Δpos_angle(Δx, Δy)
 end
 
 function Δpos_angle(x, y; lag::Int)
-    Δx, Δy = diff_lag.([x, y], lag=lag)
+    Δx, Δy = diff_lag.([x, y], lag=lag) # diff_lag in util.jl
     
     Δpos_angle(Δx, Δy)
 end
