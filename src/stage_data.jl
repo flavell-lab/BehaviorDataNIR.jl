@@ -139,7 +139,7 @@ end
 
 # If a to b vector, make into b to a vector, save out the magnitude as well
 function reverse_vec(v::Array{<:AbstractFloat,2})
-    reversed_v = zeros(2, size(v1, 2))
+    reversed_v = zeros(2, size(v, 2))
     reversed_v[1, :] = - v[1, :]
     reversed_v[2, :] = - v[2, :]
     
