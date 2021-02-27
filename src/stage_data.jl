@@ -95,7 +95,7 @@ function speed(x, y; lag::Int, fps=FLIR_FPS)
     speed(Δx, Δy, Δt)
 end
 
-function time_axis(list::AbstractVector; lag=1, fps=FLIR_FPS)
+function time_axis(list::AbstractVector; lag=0, fps=FLIR_FPS)
     num_frame = maximum(size(list))
     collect(1 : num_frame - lag) * 1 / fps
 end
@@ -124,27 +124,24 @@ end
 
 function ang_btw_vec(v1::Array{<:AbstractFloat,2}, v2::Array{<:AbstractFloat,2})
     timept = min(size(v1, 2), size(v2, 2))
+    vec_ang_lst = zeros(timept)
     
-    # initialize
-    dotprd = zeros(timept) # dot product
-    ang_btw_v = zeros(timept) # angle between vectors
-
-    # calculate angle betweeen vectors
-    for i in 1 : timept
-        dotprd[i] = dot(v1[1 : 2, i], v2[1 : 2, i]) # calculate the dot product of two vectors
-        ang_btw_v[i] = acos(dotprd[i]/(v2[3, i] * v1[3, i])) # calculate angle in radians
+    for i = 1 : timept
+        vec_ang_lst[i] = vec_ang(v1[:, i], v2[:, i])
     end
     
-    ang_btw_v
+    vec_ang_lst
 end
 
+function magnitude_vec(v::Array{<:AbstractFloat,2})
+    sqrt.(v[1, :] .^ 2 .+ v[2, :] .^ 2)
+end
 
 # If a to b vector, make into b to a vector, save out the magnitude as well
 function reverse_vec(v::Array{<:AbstractFloat,2})
-    reversed_v = zeros(3, size(v1, 2))
+    reversed_v = zeros(2, size(v1, 2))
     reversed_v[1, :] = - v[1, :]
     reversed_v[2, :] = - v[2, :]
-    reversed_v[3, :] = v[3, :] # magnitude stays the same
     
     reversed_v
 end
@@ -170,11 +167,6 @@ end
 
 
 ## TODO: tried to make it simpler by doing this, but error saying that the value inside acos is > 1
-# function magnitude_vec(v::Array{<:AbstractFloat,2})
-#     magnitude_vec = sqrt.(v[1, :] .^ 2 .+ v[2, :] .^ 2)
-    
-#     magnitude_vec
-# end
 
 # # v1 and v2 have to be same dimension array
 # function test_ang_btw_vec(v1::Array{<:AbstractFloat,2}, v2::Array{<:AbstractFloat,2})
