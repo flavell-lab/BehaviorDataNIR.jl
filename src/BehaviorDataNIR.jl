@@ -1,6 +1,6 @@
 module BehaviorDataNIR
 
-using Impute, LinearAlgebra, PyCall, PyPlot, HDF5, Images, Statistics, ProgressMeter,  FlavellBase, VideoIO
+using Impute, LinearAlgebra, PyCall, PyPlot, HDF5, Images, Statistics, ProgressMeter,  FlavellBase, VideoIO, HMMBase
 
 include("unit.jl")
 include("util.jl")
@@ -20,6 +20,7 @@ export zero_stage,
     reverse_vec,
     mov_vec,
     cluster,
+    make_vec,
 # unit.jl
     unit_stage_unit_to_mm,
     unit_bfs_pix_to_mm,

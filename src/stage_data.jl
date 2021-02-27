@@ -44,22 +44,6 @@ end
 
 
 """
-    impute_stage(x::Array{<:AbstractFloat,2})
-
-Imputes missing 2D stage data (NaN or missing) with interpolation
-
-Arguments
----------
-* `pos_stage`: (x,y) location, 2 by T array where T is len(time points)
-"""
-function impute_stage(pos_stage::Array{<:AbstractFloat,2})
-    x_imp = impute_list(pos_stage[1, :])
-    y_imp = impute_list(pos_stage[2, :])
-
-    convert(typeof(pos_stage), (hcat(x_imp,y_imp))')
-end
-
-"""
     speed(Δx::Array{<:AbstractFloat,1}, Δy::Array{<:AbstractFloat,1}, Δt::AbstractFloat)
 
 Computes speed
@@ -150,8 +134,8 @@ end
 function mov_vec(x, y, lag::Int)
     timept = size(x, 2)
     mov_v = zeros(2, timept - lag)
-    mov_v[1, :] = x[lag_index, 1 : end - lag] 
-    mov_v[2, :] = y[lag_index, 1 : end - lag]
+    mov_v[1, :] = x[1 : end - lag] 
+    mov_v[2, :] = y[1 : end - lag]
 
     mov_v
 end
@@ -165,6 +149,9 @@ function cluster(list::Array{<:AbstractFloat,1}, A, B)
     clustered_list
 end
 
+function make_vec(x::Array{<:AbstractFloat,1}, y::Array{<:AbstractFloat,1})
+    convert(Array{Float64,2}, (hcat(x, y))') # can't do typeof(x) since it's 1D
+end
 
 ## TODO: tried to make it simpler by doing this, but error saying that the value inside acos is > 1
 
@@ -183,4 +170,22 @@ end
 #     v2 = Array((hcat(v2[1, 1: min_len], v2[2, 1: min_len]))')
     
 #     v1, v2
+# end
+
+
+# 
+# """
+#     impute_stage(x::Array{<:AbstractFloat,2})
+
+# Imputes missing 2D stage data (NaN or missing) with interpolation
+
+# Arguments
+# ---------
+# * `pos_stage`: (x,y) location, 2 by T array where T is len(time points)
+# """
+# function impute_stage(pos_stage::Array{<:AbstractFloat,2})
+#     x_imp = impute_list(pos_stage[1, :])
+#     y_imp = impute_list(pos_stage[2, :])
+
+#     convert(typeof(pos_stage), (hcat(x_imp,y_imp))')
 # end
