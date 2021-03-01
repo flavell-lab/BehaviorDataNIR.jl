@@ -79,14 +79,14 @@ function time_axis(list::AbstractVector; lag=0, fps=FLIR_FPS)
     collect(1 : num_frame - lag) * 1 / fps
 end
 
-function Δpos_angle(Δx, Δy)
+function displacement_angle(Δx, Δy)
     atan.(Δy ./ Δx)
 end
 
 function Δpos_angle(x, y; lag::Int)
     Δx, Δy = diff_lag.([x, y], lag=lag) # diff_lag in util.jl
     
-    Δpos_angle(Δx, Δy)
+    displacement_angle(Δx, Δy)
 end
 
 function angular_velocity(Δθ, Δt)
