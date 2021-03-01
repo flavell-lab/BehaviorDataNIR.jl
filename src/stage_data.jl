@@ -25,14 +25,13 @@ Arguments
 * `x`: 1D data to impute
 """
 function impute_list(x::Array{<:AbstractFloat,1})
-    imputed_lst = impute(replace(x, NaN => missing), Impute.Interpolate(); dims=:rows)
-    
+    imputed_lst = Impute.interp(replace(x, NaN=>missing))
     if typeof(imputed_lst[1]) == Missing
-        imputed_lst = impute(imputed_lst, Impute.NOCB(); dims=:rows)
+        imputed_lst = impute(imputed_lst, Impute.NOCB())
     end
         
     if typeof(imputed_lst[end]) == Missing
-        imputed_lst = impute(imputed_lst, Impute.LOCF(); dims=:rows)
+        imputed_lst = impute(imputed_lst, Impute.LOCF())
     end
     
     convert.(eltype(x), imputed_lst)
