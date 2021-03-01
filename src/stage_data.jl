@@ -25,7 +25,7 @@ Arguments
 * `x`: 1D data to impute
 """
 function impute_list(x::Array{<:AbstractFloat,1})
-    imputed_lst = impute(replace(x, NaN => missing), Impute.Interpolate(); dims=:rows))
+    imputed_lst = impute(replace(x, NaN => missing), Impute.Interpolate(); dims=:rows)
     
     if typeof(imputed_lst[1]) == Missing
         imputed_lst = impute(imputed_lst, Impute.NOCB(); dims=:rows)
