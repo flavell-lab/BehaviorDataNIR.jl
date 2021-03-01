@@ -25,19 +25,15 @@ Arguments
 * `x`: 1D data to impute
 """
 function impute_list(x::Array{<:AbstractFloat,1})
-#     convert.(eltype(x), Impute.interp(replace(x, NaN=>missing)))
-    imputed_lst = Impute.interp(replace(x, NaN=>missing))
+    imputed_lst = impute(replace(x, NaN => missing), Impute.Interpolate(); dims=:rows))
     
     if typeof(imputed_lst[1]) == Missing
-        popfirst!(imputed_lst)
+        imputed_lst = impute(imputed_lst, Impute.NOCB(); dims=:rows)
     end
-    
+        
     if typeof(imputed_lst[end]) == Missing
-        pop!(imputed_lst)
+        imputed_lst = impute(imputed_lst, Impute.LOCF(); dims=:rows)
     end
-    
-    # TODO still a possibility that there are more missing elements, since if start out or end with a series of missing
-    # probably should save out the number of frames skipped in the beginning and end
     
     convert.(eltype(x), imputed_lst)
 end
@@ -117,8 +113,9 @@ function ang_btw_vec(v1::Array{<:AbstractFloat,2}, v2::Array{<:AbstractFloat,2})
     vec_ang_lst
 end
 
-function magnitude_vec(v::Array{<:AbstractFloat,2})
-    sqrt.(v[1, :] .^ 2 .+ v[2, :] .^ 2)
+# take in 2 x num_vec array as iput and return 1 x num_vec array of magnitudes
+function magnitude_vec(list_v::Array{<:AbstractFloat,2})
+    sqrt.(list_v[1, :] .^ 2 .+ list_v[2, :] .^ 2)
 end
 
 # If a to b vector, make into b to a vector, save out the magnitude as well
@@ -144,9 +141,7 @@ end
 # B = [Normal(170,10), Normal(13,5)] # observation dist, mean and variance
 function cluster(list::Array{<:AbstractFloat,1}, A, B)
     hmm = HMM(A, B)
-    clustered_list = viterbi(hmm, list)
-
-    clustered_list
+    viterbi(hmm, list)
 end
 
 function make_vec(x::Array{<:AbstractFloat,1}, y::Array{<:AbstractFloat,1})
