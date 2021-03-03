@@ -3,5 +3,5 @@ function diff_lag(A::AbstractVector; lag::Int)
 end
 
 function vec_ang(v1, v2)
-    acos(dot(v1, v2) / (norm(v1,2) * norm(v2,2)))
+    acos(dot(v1, v2) / (norm(v1, 2) * norm(v2, 2)))
 end

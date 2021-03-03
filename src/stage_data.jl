@@ -138,7 +138,7 @@ end
 
 # A = [0.9 0.1; 0.9 0.1] # transition matrix
 # B = [Normal(170,10), Normal(13,5)] # observation dist, mean and variance
-function cluster(list::Array{<:AbstractFloat,1}, A, B)
+function reversal_state(list::Array{<:AbstractFloat,1}, A, B)
     hmm = HMM(A, B)
     viterbi(hmm, list)
 end

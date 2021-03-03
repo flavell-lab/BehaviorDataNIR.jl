@@ -1,12 +1,11 @@
 module BehaviorDataNIR
 
-using Impute, LinearAlgebra, PyCall, PyPlot, HDF5, Images, Statistics, ProgressMeter,  FlavellBase, VideoIO, HMMBase
+using Impute, LinearAlgebra, ProgressMeter, PyPlot, HDF5, Images, Statistics,  FlavellBase, VideoIO, HMMBase
 
 include("unit.jl")
 include("util.jl")
 include("stage_data.jl")
 include("cam_data.jl")
-include("worm_segmentation.jl") 
 
 # stage_data.jl
 export zero_stage,
@@ -19,7 +18,7 @@ export zero_stage,
     ang_btw_vec,
     reverse_vec,
     mov_vec,
-    cluster,
+    reversal_state,
     make_vec,
 # unit.jl
     unit_stage_unit_to_mm,
@@ -30,20 +29,5 @@ export zero_stage,
 # util.jl
     diff_lag,
     vec_ang
-
-# TODO: move to UNet2D library
-# ski_morphology = pyimport_conda("skimage.morphology", "scikit-image")
-# np = pyimport("numpy")
-# cv2 = pyimport("cv2");
-
-# # worm_segmentation.jl
-#     standardize,
-#     reshape_array,
-#     eval_unet,
-#     create_model,
-#     unet,
-#     overlay_images,
-#     save_images,
-#     encode_movie
 
 end # module
