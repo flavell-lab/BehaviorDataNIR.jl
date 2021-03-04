@@ -7,24 +7,23 @@ include("util.jl")
 include("stage_data.jl")
 include("cam_data.jl")
 
+
+export 
 # stage_data.jl
-export zero_stage,
+    zero_stage, 
     impute_list,
-    impute_stage,
     speed,
     time_axis,
     Δpos_angle,
     angular_velocity,
     ang_btw_vec,
-    reverse_vec,
-    mov_vec,
     reversal_state,
     make_vec,
 # unit.jl
     unit_stage_unit_to_mm,
     unit_bfs_pix_to_mm,
 # cam_data.jl
-    read_hdf5,
+    read_hdf5, 
     nmp_vec,
 # util.jl
     diff_lag,

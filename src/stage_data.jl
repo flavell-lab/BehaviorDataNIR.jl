@@ -67,34 +67,34 @@ Arguments
 * `lag`: number of time points for discerete difference interval
 * `fps`: fps
 """
-function speed(x, y; lag::Int, fps=FLIR_FPS)
-    Δx, Δy = diff_lag.([x, y], lag=lag)
+function speed(x, y, lag::Int; fps=FLIR_FPS)
+    Δx, Δy = diff_lag.([x, y], lag)
     Δt = lag * 1 / fps
     
     speed(Δx, Δy, Δt)
 end
 
-function time_axis(list::AbstractVector; lag=0, fps=FLIR_FPS)
+function time_axis(list::AbstractVector, lag=0; fps=FLIR_FPS)
     num_frame = maximum(size(list))
     collect(1 : num_frame - lag) * 1 / fps
 end
 
-function displacement_angle(Δx, Δy)
+function Δpos_angle(Δx, Δy)
     atan.(Δy ./ Δx)
 end
 
-function Δpos_angle(x, y; lag::Int)
-    Δx, Δy = diff_lag.([x, y], lag=lag) # diff_lag in util.jl
+function Δpos_angle(x, y, lag::Int)
+    Δx, Δy = diff_lag.([x, y], lag) # diff_lag in util.jl
     
-    displacement_angle(Δx, Δy)
+    Δpos_angle(Δx, Δy)
 end
 
 function angular_velocity(Δθ, Δt)
     Δθ / Δt # rad/s
 end
 
-function angular_velocity(x, y; lag::Int, fps=FLIR_FPS)
-    Δx, Δy = diff_lag.([x, y], lag=lag)
+function angular_velocity(x, y, lag::Int; fps=FLIR_FPS)
+    Δx, Δy = diff_lag.([x, y], lag)
     Δθ = diff(Δpos_angle(Δx, Δy))
     Δt = (1 / fps) * lag
     
@@ -106,7 +106,11 @@ function ang_btw_vec(v1::Array{<:AbstractFloat,2}, v2::Array{<:AbstractFloat,2})
     vec_ang_lst = zeros(timept)
     
     for i = 1 : timept
-        vec_ang_lst[i] = vec_ang(v1[:, i], v2[:, i])
+        try
+            vec_ang_lst[i] = vec_ang(v1[:, i], v2[:, i])
+        catch
+            @warn "error at index " * string(i) * "// v1: " * string(v1[:, i]) * "// v2: " * string(v2[:, i])
+        end
     end
     
     vec_ang_lst
@@ -115,25 +119,6 @@ end
 # take in 2 x num_vec array as iput and return 1 x num_vec array of magnitudes
 function magnitude_vec(list_v::Array{<:AbstractFloat,2})
     sqrt.(list_v[1, :] .^ 2 .+ list_v[2, :] .^ 2)
-end
-
-# If a to b vector, make into b to a vector, save out the magnitude as well
-function reverse_vec(v::Array{<:AbstractFloat,2})
-    reversed_v = zeros(2, size(v, 2))
-    reversed_v[1, :] = - v[1, :]
-    reversed_v[2, :] = - v[2, :]
-    
-    reversed_v
-end
-
-# defining the worm movement vector, by using stage coordinate changes
-function mov_vec(x, y, lag::Int)
-    timept = size(x, 2)
-    mov_v = zeros(2, timept - lag)
-    mov_v[1, :] = x[1 : end - lag] 
-    mov_v[2, :] = y[1 : end - lag]
-
-    mov_v
 end
 
 # A = [0.9 0.1; 0.9 0.1] # transition matrix
@@ -182,4 +167,23 @@ end
 #     y_imp = impute_list(pos_stage[2, :])
 
 #     convert(typeof(pos_stage), (hcat(x_imp,y_imp))')
+# end
+
+# # If a to b vector, make into b to a vector, save out the magnitude as well
+# function reverse_vec(v::Array{<:AbstractFloat,2})
+#     reversed_v = zeros(2, size(v, 2))
+#     reversed_v[1, :] = - v[1, :]
+#     reversed_v[2, :] = - v[2, :]
+    
+#     reversed_v
+# end
+
+# # defining the worm movement vector, by using stage coordinate changes
+# function mov_vec(x, y, lag::Int)
+#     timept = size(x, 2)
+#     mov_v = zeros(2, timept - lag)
+#     mov_v[1, :] = x[1 : end - lag] 
+#     mov_v[2, :] = y[1 : end - lag]
+
+#     mov_v
 # end

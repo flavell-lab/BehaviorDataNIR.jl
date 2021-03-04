@@ -3,7 +3,7 @@ function read_hdf5(input_h5_path::String)
     pos_stage = h5read(input_h5_path, "pos_stage")
     pos_feature = h5read(input_h5_path, "pos_feature")
     
-    return img_nir, pos_stage, pos_feature
+    img_nir, pos_stage, pos_feature
 end
 
 function nmp_vec(pos_feature)
