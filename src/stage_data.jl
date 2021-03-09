@@ -71,7 +71,7 @@ end
 
 function time_axis(list::AbstractVector, lag=0; fps=FLIR_FPS)
     num_frame = maximum(size(list))
-    (2 * collect(1 : num_frame) .+ lag) / 2 * 1 / fps
+    (2 * collect(1 : num_frame - lag) .+ lag) / 2 * 1 / fps
 end
 
 function Δpos_angle(Δx, Δy)
