@@ -14,6 +14,11 @@ function zero_stage(pos_stage::Array{<:AbstractFloat,2})
     x .- x[1], y .- y[1]
 end
 
+function zero_stage(x, y)
+    x .- x[1], y .- y[1]
+end
+
+
 
 """
     impute_list(x::Array{<:AbstractFloat,1})
@@ -25,14 +30,7 @@ Arguments
 * `x`: 1D data to impute
 """
 function impute_list(x::Array{<:AbstractFloat,1})
-    imputed_lst = Impute.interp(replace(x, NaN=>missing))
-    if typeof(imputed_lst[1]) == Missing
-        imputed_lst = impute(imputed_lst, Impute.NOCB())
-    end
-        
-    if typeof(imputed_lst[end]) == Missing
-        imputed_lst = impute(imputed_lst, Impute.LOCF())
-    end
+    imputed = Impute.locf(Impute.nocb(Impute.interp(replace(x, NaN=>missing))))
     
     convert.(eltype(x), imputed_lst)
 end
@@ -126,8 +124,4 @@ end
 function reversal_state(list::Array{<:AbstractFloat,1}, A, B)
     hmm = HMM(A, B)
     viterbi(hmm, list)
-end
-
-function make_vec(x::Array{<:AbstractFloat,1}, y::Array{<:AbstractFloat,1})
-    convert(Array{Float64,2}, (hcat(x, y))') # can't do typeof(x) since it's 1D
 end
