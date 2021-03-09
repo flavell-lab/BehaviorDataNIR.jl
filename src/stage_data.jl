@@ -50,7 +50,8 @@ Arguments
 * `Δt`: time interval
 """
 function speed(Δx::Array{<:AbstractFloat,1}, Δy::Array{<:AbstractFloat,1}, Δt::AbstractFloat)
-    sqrt.(Δx .^2 .+ Δy .^2) / Δt
+    unit_stage_unit_to_mm(sqrt.(Δx .^2 .+ Δy .^2)) / Δt
+    
 end
 
 """
