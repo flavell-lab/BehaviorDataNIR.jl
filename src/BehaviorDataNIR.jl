@@ -22,10 +22,10 @@ export
     unit_stage_unit_to_mm,
     unit_bfs_pix_to_mm,
 # cam_data.jl
-    read_hdf5, 
     nmp_vec,
 # util.jl
     diff_lag,
-    vec_ang
+    vec_ang,
+    read_h5
 
 end # module
