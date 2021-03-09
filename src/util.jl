@@ -8,6 +8,6 @@ end
 
 function read_h5(path_h5::String)
     h5open(path_h5, "r") do h5f
-        read(h5f, img_nir), read(h5f, "pos_stage"), read(h5f, "pos_feature")
+        read(h5f, "img_nir"), read(h5f, "pos_stage"), read(h5f, "pos_feature")
     end
 end
