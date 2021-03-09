@@ -3,7 +3,7 @@ function diff_lag(A::AbstractVector, lag::Int)
 end
 
 function vec_ang(v1, v2)
-    acos(dot(v1, v2) / (norm(v1, 2) * norm(v2, 2)))
+    acos(clamp(dot(v1, v2) / (norm(v1, 2) * norm(v2, 2)), -1, 1))
 end
 
 function read_h5(path_h5::String)

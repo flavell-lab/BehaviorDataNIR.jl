@@ -30,7 +30,7 @@ Arguments
 function impute_list(x::Array{<:AbstractFloat,1})
     imputed = Impute.locf(Impute.nocb(Impute.interp(replace(x, NaN=>missing))))
     
-    convert.(eltype(x), imputed_lst)
+    convert.(eltype(x), imputed)
 end
 
 """
