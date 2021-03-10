@@ -69,7 +69,7 @@ function speed(x, y, lag::Int; fps=FLIR_FPS)
     speed(Δx, Δy, Δt)
 end
 
-function time_axis(list::AbstractVector, lag=0; fps=FLIR_FPS)
+function time_axis(list::AbstractVector, lag=0; second_derv=0, fps=FLIR_FPS)
     num_frame = maximum(size(list))
     (2 * collect(1 : num_frame - lag) .+ lag) / 2 * 1 / fps
 end
@@ -89,8 +89,7 @@ function angular_velocity(Δθ, Δt)
 end
 
 function angular_velocity(x, y, lag::Int; fps=FLIR_FPS)
-    Δx, Δy = diff_lag.([x, y], lag)
-    Δθ = diff(Δpos_angle(Δx, Δy))
+    Δθ = diff(Δpos_angle(x, y, lag))
     Δt = (1 / fps) * lag
     
     angular_velocity(Δθ, Δt) # rad/s
