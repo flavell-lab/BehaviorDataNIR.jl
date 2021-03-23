@@ -118,15 +118,17 @@ function sync_timing(path_h5)
     sync_timing(di_nir, ai_laser, img_id, q_iter_save, n_img_nir)
 end
 
-function stim_sync(stim, timing_stack, timing_nir)
+function sync_stim(stim, timing_stack, timing_nir)
     stim_to_confocal = [mean(stim[timing_stack[i,1]:timing_stack[i,2]]) for i = 1:size(timing_stack,1)]
     stim_to_nir = stim[round.(Int, dropdims(mean(timing_nir, dims=2), dims=2))]
 
     stim_to_confocal, stim_to_nir
 end
 
-function signal_stack_repeatability(signal, s_stack_start, s_stack_end; sampling_rate=5000)
-    n_stack = minimum(length.([s_stack_start, s_stack_end]))
+function signal_stack_repeatability(signal, timing_stack; sampling_rate=5000)
+    s_stack_start = timing_stack[:,1]
+    s_stack_end = timing_stack[:,2]
+    n_stack = size(s_stack_end, 1)
     n_stack_len = minimum(s_stack_end - s_stack_start)
     signal_eta = zeros(n_stack, n_stack_len)
     for i = 1:n_stack
