@@ -124,3 +124,18 @@ function stim_sync(stim, timing_stack, timing_nir)
 
     stim_to_confocal, stim_to_nir
 end
+
+function signal_stack_repeatability(signal, s_stack_start, s_stack_end; sampling_rate=5000)
+    n_stack = minimum(length.([s_stack_start, s_stack_end]))
+    n_stack_len = minimum(s_stack_end - s_stack_start)
+    signal_eta = zeros(n_stack, n_stack_len)
+    for i = 1:n_stack
+        signal_eta[i,:] .= signal[s_stack_start[i]:s_stack_start[i]+n_stack_len-1]
+    end
+
+    signal_eta_u = dropdims(mean(signal_eta, dims=1), dims=1)
+    signal_eta_s = dropdims(std(signal_eta, dims=1), dims=1)
+    list_t = collect(1:n_stack_len) / sampling_rate
+    
+    signal_eta_u, signal_eta_s, list_t, n_stack
+end
