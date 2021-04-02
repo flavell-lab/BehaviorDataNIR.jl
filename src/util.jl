@@ -16,12 +16,16 @@ end
 
 function read_pos_feature(path_h5)
     h5open(path_h5, "r") do h5f
-        import_pos_feature(h5f)
+        read_pos_feature(h5f)
     end
 end
 
 function read_h5(path_h5::String)
     h5open(path_h5, "r") do h5f
-        read(h5f, "img_nir"), read(h5f, "pos_stage"), read_pos_feature(h5f)
+        pos_feature, pos_feature_unet = read_pos_feature(h5f)
+        pos_stage = read(h5f, "pos_stage")
+        img_nir = read(h5f, "img_nir")
+        
+        img_nir, pos_stage, pos_feature, pos_feature_unet
     end
 end
