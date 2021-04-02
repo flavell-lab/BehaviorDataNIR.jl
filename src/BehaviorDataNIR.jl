@@ -30,6 +30,9 @@ export
     # sync.jl
     sync_timing,
     sync_stim,
-    signal_stack_repeatability
+    signal_stack_repeatability,
+    # segmentation.jl
+    downsample_unet_input, 
+    process_unet_input
 
 end # module
