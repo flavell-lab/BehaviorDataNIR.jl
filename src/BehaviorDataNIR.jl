@@ -1,12 +1,13 @@
 module BehaviorDataNIR
 
-using Impute, LinearAlgebra, ProgressMeter, PyPlot, HDF5, Images, Statistics, FlavellBase, VideoIO, HMMBase
+using Impute, LinearAlgebra, ProgressMeter, HDF5, Images, Statistics, FlavellBase, HMMBase, UNet2D
 
 include("unit.jl")
 include("util.jl")
 include("stage_data.jl")
 include("cam_data.jl")
 include("sync.jl")
+include("segmentation.jl")
 
 export 
     # stage_data.jl
