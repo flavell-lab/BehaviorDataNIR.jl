@@ -1,6 +1,7 @@
 module BehaviorDataNIR
 
-using Impute, LinearAlgebra, ProgressMeter, HDF5, Images, Statistics, FlavellBase, HMMBase, UNet2D
+using Impute, LinearAlgebra, ProgressMeter, HDF5, Images, Statistics,
+    FlavellBase, HMMBase, UNet2D, SegmentationStats
 
 include("unit.jl")
 include("util.jl")
@@ -33,6 +34,7 @@ export
     sync_stim,
     signal_stack_repeatability,
     # segmentation.jl
-    downsample_unet_input
+    downsample_unet_input,
+    segment_worm!
 
 end # module
