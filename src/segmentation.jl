@@ -1,3 +1,5 @@
+euclidean_dist(x1, x2) = norm(x1 .- x2, 2)
+
 function downsample_unet_input(img)
     @assert(size(img) == (968, 732))
     img = Float32.(img[4:963, 4:723])
@@ -82,8 +84,6 @@ function longest_shortest(xs, ys)
     
     list_paths[idx_long_short][2] .+ 1 # path_longest_shortest
 end
-
-euclidean_dist(x1, x2) = norm(x1 .- x2, 2)
 
 function medial_axis(img_bin, pts_n)
     # medial axis extraction
