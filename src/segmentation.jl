@@ -4,7 +4,3 @@ function downsample_unet_input(img)
     (img[1:2:end-1,1:2:end-1] .+ img[2:2:end,2:2:end] .+
         img[1:2:end-1,2:2:end] .+ img[2:2:end,1:2:end-1]) ./ 4
 end
-
-function process_unet_input(img)
-    UNet2D.standardize(downsample_unet_input(img))
-end

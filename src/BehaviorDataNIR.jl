@@ -33,7 +33,6 @@ export
     sync_stim,
     signal_stack_repeatability,
     # segmentation.jl
-    downsample_unet_input, 
-    process_unet_input
+    downsample_unet_input
 
 end # module
