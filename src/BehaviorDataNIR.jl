@@ -1,7 +1,8 @@
 module BehaviorDataNIR
 
 using Impute, LinearAlgebra, ProgressMeter, HDF5, Images, Statistics,
-    FlavellBase, HMMBase, UNet2D, SegmentationStats
+    FlavellBase, HMMBase, UNet2D, SegmentationStats,
+    Combinatorics, LinearAlgebra, Dierckx, PyCall
 
 include("unit.jl")
 include("util.jl")
@@ -9,6 +10,7 @@ include("stage_data.jl")
 include("cam_data.jl")
 include("sync.jl")
 include("segmentation.jl")
+include("init.jl")
 
 export 
     # stage_data.jl
@@ -35,6 +37,8 @@ export
     signal_stack_repeatability,
     # segmentation.jl
     downsample_unet_input,
-    segment_worm!
+    segment_worm!,
+    medial_axis,
+    fit_spline
 
 end # module
