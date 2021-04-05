@@ -68,7 +68,7 @@ function longest_shortest(xs, ys)
     g, g_mat = get_nn_graph(xs, ys)
     
     # find terminal nodes
-    idx_deg1 = findall(dropdims(sum(g.toarray(), dims=1), dims=1) .== 1)
+    idx_deg1 = findall(dropdims(sum(g.toarray(), dims=1), dims=1) .!= 2)
     
     # find longest shortest path for end nodes combinations
     list_paths = []
