@@ -111,10 +111,44 @@ function medial_axis(img_bin, pts_n)
     xs, ys
 end
 
-function fit_spline(xs, ys; n_subsample=15, spline_order=3)
-    spl_data = cat(xs[1:n_subsample:end], ys[1:n_subsample:end], dims=2)'
+function nn_dist(t, spl)
+    spl_pts = spl(t, 1:2)
+
+    sqrt.(dropdims(sum((spl_pts[2:end, :] .- spl_pts[1:end-1, :]) .^ 2, dims=2), dims=2))
+end
+
+function cost_dist!(t, spl, dists)
+    t = clamp.(t, 0, 1)
+    t[1] = 0.
+    t[end] = 1.
+    dists .= nn_dist(t, spl)
+    
+    sum((dists .- mean(dists)) .^ 2)
+end
+
+function fit_spline(A::Matrix; t=nothing)
+    t = isnothing(t) ? LinRange(0,1,size(A,1)) : t
+    Interpolations.scale(interpolate(A, (BSpline(Cubic(Natural(OnGrid()))), NoInterp())),
+        t, 1:2)
+end
+
+function fit_spline(xs, ys; n_subsample=15)
+    # subsample data points
+    spl_data = cat(xs[1:n_subsample:end], ys[1:n_subsample:end], dims=2)
     if (length(xs) - 1) % n_subsample != 0
-        spl_data = hcat(spl_data, [xs[end], ys[end]])
+        spl_data = vcat(spl_data, [xs[end], ys[end]]')
     end
-    spl_data, ParametricSpline(spl_data, k=spline_order)
+
+    # fit initial spline
+    spl_init = fit_spline(spl_data)
+
+    # optimize to uniformly distribute the pts
+    t0 = collect(0:.01:1)
+    dists = zeros(Float64, length(t0)-1)
+    res_dist = optimize(t -> cost_dist!(t, spl_init, dists), t0, ConjugateGradient(),
+        Optim.Options(g_abstol=1e-4))
+    x_opt = res_dist.minimizer
+
+    # fit spline
+    spl_data, fit_spline(spl_init(x_opt, 1:2))
 end

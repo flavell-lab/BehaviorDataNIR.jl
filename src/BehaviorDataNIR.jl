@@ -2,7 +2,7 @@ module BehaviorDataNIR
 
 using Impute, LinearAlgebra, ProgressMeter, HDF5, Images, Statistics,
     FlavellBase, HMMBase, UNet2D, SegmentationStats,
-    Combinatorics, LinearAlgebra, Dierckx, PyCall
+    Combinatorics, LinearAlgebra, Interpolations, PyCall, Optim
 
 include("unit.jl")
 include("util.jl")
