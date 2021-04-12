@@ -55,6 +55,21 @@ function detect_nir_timing(di_nir, img_id, q_iter_save, n_img_nir)
     hcat(list_nir_on, list_nir_off)[idx_nir_save,:]
 end
 
+function detect_nir_timing(path_h5)
+    n_img_nir, daqmx_di, img_metadata = h5open(path_h5, "r") do h5f
+        n_img_nir = size(h5f["img_nir"])[3]
+        daqmx_di = read(h5f, "daqmx_di")
+        img_metadata = read(h5f, "img_metadata")
+        n_img_nir, daqmx_di, img_metadata
+    end
+    di_nir = Float32.(daqmx_di[:,2])
+    img_timestamp = img_metadata["img_timestamp"]
+    img_id = img_metadata["img_id"]
+    q_iter_save = img_metadata["q_iter_save"]
+    
+    detect_nir_timing(di_nir, img_id, q_iter_save, n_img_nir)
+end
+
 function detect_confocal_timing(ai_laser)
     ai_laser_bin = Int16.(ai_laser .> mean(ai_laser)) # binarize laser analog signal
 
