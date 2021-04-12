@@ -1,5 +1,5 @@
-function detect_nir_timing(di_nir)
-        # behavior camera - FLIR
+function detect_nir_timing(di_nir, img_id, q_iter_save, n_img_nir)
+    # behavior camera - FLIR
     list_nir_on = findall(diff(di_nir) .> 1) .+ 1
     list_nir_off = findall(diff(di_nir) .< -1) .+ 1
     nir_record_on = diff(list_nir_on) .> 500
@@ -28,31 +28,6 @@ function detect_nir_timing(di_nir)
         error("length(list_nir_on) != length(list_nir_off)")
     end
     
-    list_nir_on, list_nir_off
-end
-
-function detect_confocal_timing(ai_laser)
-    ai_laser_bin = Int16.(ai_laser .> mean(ai_laser)) # binarize laser analog signal
-
-    list_confocal_on = findall(diff(ai_laser_bin) .== 1) .+ 1
-    list_confocal_off = findall(diff(ai_laser_bin) .== -1) .+ 1
-
-    list_stack_start = list_confocal_on[findall(diff(list_confocal_on) .> 300) .+ 1]
-    prepend!(list_stack_start, list_confocal_on[1])
-    list_stack_stop = list_confocal_off[findall(diff(list_confocal_off) .> 300)]
-    append!(list_stack_stop, list_confocal_off[end])
-
-    if length(list_stack_start) != length(list_stack_stop)
-        error("n(stack_off_confocal) != n(stack_on_confocal)")
-    end
-    
-    list_stack_start, list_stack_stop
-end
-
-function sync_timing(di_nir, ai_laser, img_id, q_iter_save, n_img_nir)
-    list_nir_on, list_nir_off = detect_nir_timing(di_nir)
-    list_stack_start, list_stack_stop = detect_confocal_timing(ai_laser)
-    
     img_id_diff = diff(img_id)
     prepend!(img_id_diff, 1)
     if length(list_nir_on) - sum(diff(img_id)) > 3
@@ -77,8 +52,30 @@ function sync_timing(di_nir, ai_laser, img_id, q_iter_save, n_img_nir)
         error("detected number of NIR frames != saved NIR frames")
     end
 
-    timing_stack = hcat(list_stack_start, list_stack_stop)
-    timing_nir = hcat(list_nir_on, list_nir_off)[idx_nir_save,:]
+    hcat(list_nir_on, list_nir_off)[idx_nir_save,:]
+end
+
+function detect_confocal_timing(ai_laser)
+    ai_laser_bin = Int16.(ai_laser .> mean(ai_laser)) # binarize laser analog signal
+
+    list_confocal_on = findall(diff(ai_laser_bin) .== 1) .+ 1
+    list_confocal_off = findall(diff(ai_laser_bin) .== -1) .+ 1
+
+    list_stack_start = list_confocal_on[findall(diff(list_confocal_on) .> 300) .+ 1]
+    prepend!(list_stack_start, list_confocal_on[1])
+    list_stack_stop = list_confocal_off[findall(diff(list_confocal_off) .> 300)]
+    append!(list_stack_stop, list_confocal_off[end])
+
+    if length(list_stack_start) != length(list_stack_stop)
+        error("n(stack_off_confocal) != n(stack_on_confocal)")
+    end
+    
+    list_stack_start, list_stack_stop
+end
+
+function sync_timing(di_nir, ai_laser, img_id, q_iter_save, n_img_nir)
+    timing_stack = detect_confocal_timing(ai_laser)
+    timing_nir = detect_nir_timing(di_nir, img_id, q_iter_save, n_img_nir)
 
     confocal_to_nir = []
     nir_to_confocal = zeros(size(timing_nir,1))
