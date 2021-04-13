@@ -30,7 +30,7 @@ function detect_nir_timing(di_nir, img_id, q_iter_save, n_img_nir)
     
     img_id_diff = diff(img_id)
     prepend!(img_id_diff, 1)
-    if length(list_nir_on) - sum(diff(img_id)) > 3
+    if abs(length(list_nir_on) - sum(diff(img_id))) > 3
         error("the detected trigger count is different from the image id data by more than 3")
     else
         img_id_diff[end] += length(list_nir_on) - sum(diff(img_id)) - 1
