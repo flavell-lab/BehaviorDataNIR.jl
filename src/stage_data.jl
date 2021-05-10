@@ -121,3 +121,36 @@ function reversal_state(list::Array{<:AbstractFloat,1}, A, B)
     hmm = HMM(A, B)
     viterbi(hmm, list)
 end
+
+"""
+Corrects x and y position variables to correspond to the worm centroid, rather than the worm pharynx.
+
+# Arguments:
+
+- `x_imp`: Pharynx `x` position
+- `y_imp`: Pharynx `y` position
+- `x_array`: Segmentation array in the `x`-dimension
+- `y_array`: Segmentation array in the `y`-dimension
+- `segment_end_matrix`: Matrix of consistently-spaced segmentation locations across time points
+- `seg_range`: Set of segmentation locations to use to compute the centroid (which will be the average of them)
+- `unbin_fn`: Function to undo binning used to make the segmentation matrix. Default `x->unit_bfs_pix_to_stage_unit(2*x+3)`
+"""
+function offset_xy(x_imp, y_imp, x_array, y_array, segment_end_matrix, seg_range; unbin_fn=x->unit_bfs_pix_to_stage_unit(2*x+3))
+    x_imp_offset = []
+    y_imp_offset = []
+    err_timepts = []
+    last_x_offset = 0
+    last_y_offset = 0
+    for t=1:length(x_imp)
+        if(length(segment_end_matrix[t]) >= maximum(seg_range) + 2)
+            last_x_offset = mean([unbin_fn(x_array[t,segment_end_matrix[t][i]]) for i in seg_range])
+            last_y_offset = mean([unbin_fn(y_array[t,segment_end_matrix[t][i]]) for i in seg_range])
+        else
+            push!(err_timepts, t)
+        end
+        push!(x_imp_offset, x_imp[t] - last_x_offset)
+        push!(y_imp_offset, y_imp[t] - last_y_offset)
+    end
+    return (x_imp_offset, y_imp_offset, err_timepts)
+end
+

@@ -153,3 +153,55 @@ function signal_stack_repeatability(signal, timing_stack; sampling_rate=5000)
     
     signal_eta_u, signal_eta_s, list_t, n_stack
 end
+
+"""
+Bins NIR behavioral data to match the confocal time points.
+
+# Arguments:
+- `vec`: behavioral data vector. Can be 1D or 2D; if 2D time should be on the columns
+- `confocal_to_nir`: confocal to NIR time sync
+- `confocal_len`: length of confocal dataset
+"""
+function nir_vec_to_confocal(vec, confocal_to_nir, confocal_len)
+    if length(size(vec)) == 1
+        new_data = [mean(vec[confocal_to_nir[t]]) for t=1:confocal_len]
+    elseif length(size(vec)) == 2
+        new_data = zeros(size(vec,1), confocal_len)
+        for dim in 1:size(vec,1)
+            new_data[dim,:] = nir_vec_to_confocal(vec[dim,:], confocal_to_nir, confocal_len)
+        end
+    else
+        error("Vector dimension cannot be greater than 2.")
+    end
+    return new_data
+end
+
+"""
+Shifts a lagged vector `vec` to correct for the lag amount `lag`.
+"""
+function unlag_vec(vec, lag)
+    if length(size(vec)) == 1
+        unlagged_vec = fill(NaN, length(vec) + lag)
+        unlagged_vec[1+lag÷2:end-lag÷2] = vec
+    elseif length(size(vec)) == 2
+        unlagged_vec = fill(NaN, size(vec,1), size(vec,2) + lag)
+        for dim = 1:size(vec,1)
+            unlagged_vec[dim,:] = unlag_vec(vec[dim,:], lag)
+        end
+    else
+        error("Vector dimension cannot be greater than 2.")
+    end
+    return unlagged_vec     
+end
+
+"""
+Converts NIR time point `t` to confocal time point using `nir_to_confocal` timesync variable.
+"""
+function nir_to_confocal_t(t, nir_to_confocal)
+    for t_check = t:-1:1
+        if nir_to_confocal[t_check] > 0
+            return nir_to_confocal[t_check]
+        end
+    end
+    return 1
+end
