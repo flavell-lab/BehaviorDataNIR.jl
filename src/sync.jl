@@ -95,7 +95,7 @@ function sync_timing(di_nir, ai_laser, img_id, q_iter_save, n_img_nir)
     confocal_to_nir = []
     nir_to_confocal = zeros(size(timing_nir,1))
     for i = 1:size(timing_stack, 1)
-        start_, end_ = timing_stack[i,:]
+        start_, end_ = timing_stack[1][i], timing_stack[2][i]
 
         nir_on_bit = start_ .< timing_nir[:,1] .< end_
         nir_off_bit = start_ .< timing_nir[:,2] .< end_
