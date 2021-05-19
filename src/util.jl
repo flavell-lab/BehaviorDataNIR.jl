@@ -41,7 +41,7 @@ end
 Converts a vector into an angle in the lab `xy`-coordinate space.
 """
 function vec_to_angle(vec)
-    return fix_angle.([vec[1,i] < 0 ? atan(vec[2,i]/vec[1,i]) + pi : atan(vec[2,i]/vec[1,i]) for i=1:size(vec,2)])
+    return recenter_angle.([vec[1,i] < 0 ? atan(vec[2,i]/vec[1,i]) + pi : atan(vec[2,i]/vec[1,i]) for i=1:size(vec,2)])
 end
 
 """
