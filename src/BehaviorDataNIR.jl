@@ -38,6 +38,7 @@ export
     vec_to_angle,
     make_vec,
     savitzky_golay_filter,
+    euclidean_dist,
     # sync.jl
     sync_timing,
     sync_stim,

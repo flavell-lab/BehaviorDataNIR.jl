@@ -87,3 +87,5 @@ function savitzky_golay_filter(data, lag; is_derivative::Bool=false, has_inflect
     end
     return smoothed_data
 end
+
+euclidean_dist(x1, x2) = norm(x1 .- x2, 2)
