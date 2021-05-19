@@ -4,6 +4,7 @@ using Impute, LinearAlgebra, ProgressMeter, HDF5, Images, Statistics,
     FlavellBase, HMMBase, UNet2D, SegmentationStats,
     Combinatorics, LinearAlgebra, Interpolations, PyCall, Optim
 
+include("analysis.jl")
 include("unit.jl")
 include("util.jl")
 include("stage_data.jl")
