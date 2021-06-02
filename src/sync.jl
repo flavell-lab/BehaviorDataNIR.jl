@@ -92,6 +92,13 @@ function sync_timing(di_nir, ai_laser, img_id, q_iter_save, n_img_nir)
     timing_stack = hcat(detect_confocal_timing(ai_laser)...)
     timing_nir = detect_nir_timing(di_nir, img_id, q_iter_save, n_img_nir)
 
+    if timing_stack[1,1] > timing_stack[1,2]
+        val = timing_stack[end,2]
+        timing_stack_new = timing_stack[1:end-1,:]
+        timing_stack_new[:,2] .= timing_stack[2:end,2]
+    end
+
+
     confocal_to_nir = []
     nir_to_confocal = zeros(size(timing_nir,1))
     for i = 1:size(timing_stack, 1)
