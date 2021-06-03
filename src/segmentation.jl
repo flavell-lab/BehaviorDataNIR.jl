@@ -98,7 +98,7 @@ function medial_axis(img_bin, pts_n)
     # reorder points
     xs = xs[pts_order]
     ys = ys[pts_order]
-
+    
     # find head/tail and flip
     dist_nose_1 = euclidean_dist((xs[1], ys[1]), pts_n)
     dist_nose_end = euclidean_dist((xs[end], ys[end]), pts_n)
@@ -107,7 +107,33 @@ function medial_axis(img_bin, pts_n)
         reverse!(xs)
         reverse!(ys)
     end
-    
+
+    s = size(img_bin)
+
+    # crop out points that hit the edge of frame
+    crop_max = length(xs)
+    for i=1:length(xs)
+        if xs[i] == s[1] || ys[i] == s[2]
+            crop_max = i
+            break
+        end
+    end
+
+    # crop out points in front of the nose
+    crop_min = 1
+    min_dist = Inf
+    for i=1:length(xs)
+        d = euclidean_dist((xs[i], ys[i]), pts_n)
+        if d < min_dist
+            min_dist = d
+            crop_min = i
+        end
+    end
+
+
+    xs = xs[crop_min:crop_max]
+    ys = ys[crop_min:crop_max]
+
     xs, ys
 end
 
@@ -132,23 +158,24 @@ function fit_spline(A::Matrix; t=nothing)
         t, 1:2)
 end
 
-function fit_spline(xs, ys; n_subsample=15)
+function fit_spline(xs, ys, pts_n; n_subsample=15)
     # subsample data points
     spl_data = cat(xs[1:n_subsample:end], ys[1:n_subsample:end], dims=2)
     if (length(xs) - 1) % n_subsample != 0
         spl_data = vcat(spl_data, [xs[end], ys[end]]')
     end
 
+    spl_data[1,:] .= pts_n
+
     # fit initial spline
     spl_init = fit_spline(spl_data)
 
     # optimize to uniformly distribute the pts
-    t0 = collect(0:.01:1)
+    t0 = collect(0:0.01:1)
     dists = zeros(Float64, length(t0)-1)
     res_dist = optimize(t -> cost_dist!(t, spl_init, dists), t0, ConjugateGradient(),
         Optim.Options(g_abstol=1e-4))
     x_opt = res_dist.minimizer
 
-    # fit spline
-    spl_data, fit_spline(spl_init(x_opt, 1:2))
+    return spl_data, fit_spline(spl_init(x_opt, 1:2))
 end
