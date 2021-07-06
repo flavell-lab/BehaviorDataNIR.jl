@@ -40,6 +40,7 @@ export
     make_vec,
     savitzky_golay_filter,
     euclidean_dist,
+    write_behavior_video,
     # sync.jl
     sync_timing,
     sync_stim,
