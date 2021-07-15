@@ -212,14 +212,16 @@ function fit_spline(A::Matrix; t=nothing)
         t, 1:2)
 end
 
-function fit_spline(xs, ys, pts_n; n_subsample=15)
+function fit_spline(param, xs, ys, pts_n; n_subsample=15)
     # subsample data points
     spl_data = cat(xs[1:n_subsample:end], ys[1:n_subsample:end], dims=2)
     if (length(xs) - 1) % n_subsample != 0
         spl_data = vcat(spl_data, [xs[end], ys[end]]')
     end
-
-    spl_data[1,:] .= pts_n
+    
+    if pts_n[3] > param["nose_confidence_threshold"]
+        spl_data[1,:] .= pts_n[1:2]
+    end
 
     # fit initial spline
     spl_init = fit_spline(spl_data)
