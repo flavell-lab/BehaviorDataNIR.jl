@@ -64,14 +64,14 @@ function order_pts(xs, ys)
     list_ord[findmin(list_cost)[2]] .+ 1
 end
 
-function longest_shortest(param, xs, ys; prev_spl_pts=nothing)
+function longest_shortest(param, xs, ys; prev_med_axis=nothing)
     g, g_mat = get_nn_graph(xs, ys)
     g_arr = g.toarray()
     
-    if !isnothing(prev_spl_pts)
+    if !isnothing(prev_med_axis)
         for edge in g_mat.edges
             pt = ((xs[edge[1]+1]+xs[edge[2]+1])/2, (ys[edge[1]+1]+ys[edge[2]+1])/2)
-            m = minimum([euclidean_dist(pt, prev_spl_pts[p,:]) for p in 1:size(prev_spl_pts,1)])
+            m = minimum([euclidean_dist(pt, (prev_med_axis[1][p], prev_med_axis[2][p])) for p in 1:size(prev_med_axis,1)])
             if m > param["max_spline_change"]
                g_arr[edge[1]+1,edge[2]+1] = 0
                g_arr[edge[2]+1,edge[1]+1] = 0
@@ -98,7 +98,7 @@ function longest_shortest(param, xs, ys; prev_spl_pts=nothing)
     list_paths[idx_long_short][2] .+ 1 # path_longest_shortest
 end
 
-function medial_axis(param, img_bin, pts_n; prev_spl_pts=nothing, prev_pts_order=nothing)
+function medial_axis(param, img_bin, pts_n; prev_med_axis=nothing, prev_pts_order=nothing)
     # medial axis extraction
     img_med_axis = py_ski_morphology.medial_axis(img_bin)
     array_pts = cat(map(x->[x[2], x[1]], findall(img_med_axis))..., dims=2)
@@ -110,12 +110,12 @@ function medial_axis(param, img_bin, pts_n; prev_spl_pts=nothing, prev_pts_order
     
     if !isnothing(prev_pts_order) && (length(pts_order) < length(prev_pts_order) - param["spline_len_change"])
         bad_pts = ones(Bool, size(img_bin))
-        s = size(prev_spl_pts,1)
-        for i=1:size(bad_pts,1)
+        s = size(prev_med_axis,1)
+        Threads.@threads for i=1:size(bad_pts,1)
            for j=1:size(bad_pts,2)
-                dist_arr = [euclidean_dist((i,j), prev_spl_pts[p,:]) for p in 1:s]
+                dist_arr = [euclidean_dist((i,j), (prev_med_axis[1][p], prev_med_axis[2][p])) for p in 1:s]
                 m = minimum(dist_arr)
-                close_pts = [p for p in 1:s if dist_arr[p] - m <= 1]
+                close_pts = [p for p in 1:s if dist_arr[p] - m <= param["close_pts_threshold"]]
                 if maximum(close_pts) - minimum(close_pts) > param["loop_dist_threshold"]
                     bad_pts[i,j] = false
                 end
