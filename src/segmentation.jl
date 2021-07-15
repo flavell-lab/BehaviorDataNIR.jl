@@ -72,7 +72,7 @@ function longest_shortest(param, xs, ys; prev_med_axis=nothing)
         for edge in g_mat.edges
             pt = ((xs[edge[1]+1]+xs[edge[2]+1])/2, (ys[edge[1]+1]+ys[edge[2]+1])/2)
             m = minimum([euclidean_dist(pt, (prev_med_axis[1][p], prev_med_axis[2][p])) for p in 1:length(prev_med_axis[1])])
-            if m > param["max_spline_change"]
+            if m > param["max_med_axis_delta"]
                g_arr[edge[1]+1,edge[2]+1] = 0
                g_arr[edge[2]+1,edge[1]+1] = 0
             end
@@ -98,43 +98,64 @@ function longest_shortest(param, xs, ys; prev_med_axis=nothing)
     list_paths[idx_long_short][2] .+ 1 # path_longest_shortest
 end
 
+
+function generate_med_axis_mask(img_bin_size, prev_med_axis)
+    mask = ones(Bool, img_bin_size)
+    s = length(prev_med_axis[1])
+    Threads.@threads for i=1:size(mask,1)
+       for j=1:size(mask,2)
+            dist_arr = [euclidean_dist((i,j), (prev_med_axis[1][p], prev_med_axis[2][p])) for p in 1:s]
+            m = minimum(dist_arr)
+            close_pts = [p for p in 1:s if dist_arr[p] - m <= param["close_pts_threshold"]]
+            if maximum(close_pts) - minimum(close_pts) > param["loop_dist_threshold"]
+                mask[i,j] = false
+            end
+       end
+    end
+    return mask
+end
+
+function self_proximity_detector(param, xs, ys)
+    for i=1:length(xs)
+        for j=1:length(xs)
+            if abs(j-i) < param["loop_dist_threshold"]
+                continue
+            end
+            if euclidean_dist((xs[i],ys[i]), (xs[j],ys[j])) <= param["med_axis_self_dist_threshold"]
+                return true
+            end
+        end
+    end
+    return false
+end
+
 function medial_axis(param, img_bin, pts_n; prev_med_axis=nothing, prev_pts_order=nothing)
-    # medial axis extraction
-    img_med_axis = py_ski_morphology.medial_axis(img_bin)
+    if !isnothing(prev_pts_order)
+        xs, ys, pts_order = medial_axis(param, img_bin, pts_n)
+        if (length(pts_order) > length(prev_pts_order) - param["med_axis_shorten_threshold"]) && !self_proximity_detector(param, xs, ys)
+            return xs, ys, pts_order
+        end
+        
+        mask = generate_med_axis_mask(size(img_bin), prev_med_axis)
+        img_med_axis = py_ski_morphology.medial_axis(img_bin, mask=mask)
+        img_med_axis[Bool.(true .- mask)] .= false
+    else
+        # medial axis extraction
+        img_med_axis = py_ski_morphology.medial_axis(img_bin)
+    end
+    
     array_pts = cat(map(x->[x[2], x[1]], findall(img_med_axis))..., dims=2)
     xs = array_pts[2,:]
     ys = array_pts[1,:]
-
-    # find the longest-shortest path
-    pts_order = longest_shortest(param, xs, ys)
-    
-    if !isnothing(prev_pts_order) && (length(pts_order) < length(prev_pts_order) - param["spline_len_change"])
-        bad_pts = ones(Bool, size(img_bin))
-        s = length(prev_med_axis[1])
-        Threads.@threads for i=1:size(bad_pts,1)
-           for j=1:size(bad_pts,2)
-                dist_arr = [euclidean_dist((i,j), (prev_med_axis[1][p], prev_med_axis[2][p])) for p in 1:s]
-                m = minimum(dist_arr)
-                close_pts = [p for p in 1:s if dist_arr[p] - m <= param["close_pts_threshold"]]
-                if maximum(close_pts) - minimum(close_pts) > param["loop_dist_threshold"]
-                    bad_pts[i,j] = false
-                end
-           end
-        end
-        img_med_axis = py_ski_morphology.medial_axis(img_bin, mask=bad_pts)
-        array_pts = cat(map(x->[x[2], x[1]], findall(img_med_axis))..., dims=2)
-        xs = array_pts[2,:]
-        ys = array_pts[1,:]
-        pts_order = longest_shortest(param, xs, ys, prev_med_axis=prev_med_axis)
-    end
+    pts_order = longest_shortest(param, xs, ys, prev_med_axis=prev_med_axis)
 
     # reorder points
     xs = xs[pts_order]
     ys = ys[pts_order]
     
     # find head/tail and flip
-    dist_nose_1 = euclidean_dist((xs[1], ys[1]), pts_n)
-    dist_nose_end = euclidean_dist((xs[end], ys[end]), pts_n)
+    dist_nose_1 = euclidean_dist((xs[1], ys[1]), pts_n[1:2])
+    dist_nose_end = euclidean_dist((xs[end], ys[end]), pts_n[1:2])
 
     if dist_nose_1 > dist_nose_end
         reverse!(xs)
@@ -152,24 +173,23 @@ function medial_axis(param, img_bin, pts_n; prev_med_axis=nothing, prev_pts_orde
         end
     end
 
-    # crop out points in front of the nose
     crop_min = 1
-    min_dist = Inf
-    for i=1:length(xs)
-        d = euclidean_dist((xs[i], ys[i]), pts_n)
-        if d < min_dist
-            min_dist = d
-            crop_min = i
+    # crop out points in front of the nose - don't do this if low confidence
+    if pts_n[3] > param["nose_confidence_threshold"]
+        min_dist = Inf
+        for i=1:length(xs)
+            d = euclidean_dist((xs[i], ys[i]), pts_n[1:2])
+            if d < min_dist
+                min_dist = d
+                crop_min = i
+            end
         end
     end
-
-
     xs = xs[crop_min:crop_max]
     ys = ys[crop_min:crop_max]
 
     xs, ys, pts_order
 end
-
 
 function nn_dist(t, spl)
     spl_pts = spl(t, 1:2)
