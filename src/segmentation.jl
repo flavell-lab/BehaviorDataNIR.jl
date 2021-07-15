@@ -71,7 +71,7 @@ function longest_shortest(param, xs, ys; prev_med_axis=nothing)
     if !isnothing(prev_med_axis)
         for edge in g_mat.edges
             pt = ((xs[edge[1]+1]+xs[edge[2]+1])/2, (ys[edge[1]+1]+ys[edge[2]+1])/2)
-            m = minimum([euclidean_dist(pt, (prev_med_axis[1][p], prev_med_axis[2][p])) for p in 1:size(prev_med_axis,1)])
+            m = minimum([euclidean_dist(pt, (prev_med_axis[1][p], prev_med_axis[2][p])) for p in 1:length(prev_med_axis[1])])
             if m > param["max_spline_change"]
                g_arr[edge[1]+1,edge[2]+1] = 0
                g_arr[edge[2]+1,edge[1]+1] = 0
@@ -110,7 +110,7 @@ function medial_axis(param, img_bin, pts_n; prev_med_axis=nothing, prev_pts_orde
     
     if !isnothing(prev_pts_order) && (length(pts_order) < length(prev_pts_order) - param["spline_len_change"])
         bad_pts = ones(Bool, size(img_bin))
-        s = size(prev_med_axis,1)
+        s = length(prev_med_axis[1])
         Threads.@threads for i=1:size(bad_pts,1)
            for j=1:size(bad_pts,2)
                 dist_arr = [euclidean_dist((i,j), (prev_med_axis[1][p], prev_med_axis[2][p])) for p in 1:s]
