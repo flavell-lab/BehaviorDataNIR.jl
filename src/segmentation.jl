@@ -64,11 +64,24 @@ function order_pts(xs, ys)
     list_ord[findmin(list_cost)[2]] .+ 1
 end
 
-function longest_shortest(xs, ys)
+function longest_shortest(param, xs, ys; prev_spl_pts=nothing)
     g, g_mat = get_nn_graph(xs, ys)
+    g_arr = g.toarray()
+    
+    if !isnothing(prev_spl_pts)
+        for edge in g_mat.edges
+            pt = ((xs[edge[1]+1]+xs[edge[2]+1])/2, (ys[edge[1]+1]+ys[edge[2]+1])/2)
+            m = minimum([euclidean_dist(pt, prev_spl_pts[p,:]) for p in 1:size(prev_spl_pts,1)])
+            if m > param["max_spline_change"]
+               g_arr[edge[1]+1,edge[2]+1] = 0
+               g_arr[edge[2]+1,edge[1]+1] = 0
+            end
+        end
+        g_mat = py_nx.to_networkx_graph(g_arr)
+    end
     
     # find terminal nodes
-    idx_deg1 = findall(dropdims(sum(g.toarray(), dims=1), dims=1) .!= 2)
+    idx_deg1 = findall(dropdims(sum(g_arr, dims=1), dims=1) .!= 2)
     
     # find longest shortest path for end nodes combinations
     list_paths = []
@@ -85,7 +98,7 @@ function longest_shortest(xs, ys)
     list_paths[idx_long_short][2] .+ 1 # path_longest_shortest
 end
 
-function medial_axis(img_bin, pts_n)
+function medial_axis_new(param, img_bin, pts_n; prev_spl_pts=nothing, prev_pts_order=nothing)
     # medial axis extraction
     img_med_axis = py_ski_morphology.medial_axis(img_bin)
     array_pts = cat(map(x->[x[2], x[1]], findall(img_med_axis))..., dims=2)
@@ -93,7 +106,27 @@ function medial_axis(img_bin, pts_n)
     ys = array_pts[1,:]
 
     # find the longest-shortest path
-    pts_order = longest_shortest(xs, ys)
+    pts_order = longest_shortest(param, xs, ys)
+    
+    if !isnothing(prev_pts_order) && (length(pts_order) < length(prev_pts_order) - param["spline_len_change"])
+        bad_pts = ones(Bool, size(img_bin))
+        s = size(prev_spl_pts,1)
+        for i=1:size(bad_pts,1)
+           for j=1:size(bad_pts,2)
+                dist_arr = [euclidean_dist((i,j), prev_spl_pts[p,:]) for p in 1:s]
+                m = minimum(dist_arr)
+                close_pts = [p for p in 1:s if dist_arr[p] - m <= 1]
+                if maximum(close_pts) - minimum(close_pts) > param["loop_dist_threshold"]
+                    bad_pts[i,j] = false
+                end
+           end
+        end
+        img_med_axis = py_ski_morphology.medial_axis(img_bin, mask=bad_pts)
+        array_pts = cat(map(x->[x[2], x[1]], findall(img_med_axis))..., dims=2)
+        xs = array_pts[2,:]
+        ys = array_pts[1,:]
+        pts_order = longest_shortest(param, xs, ys, prev_spl_pts=prev_spl_pts)
+    end
 
     # reorder points
     xs = xs[pts_order]
@@ -134,8 +167,9 @@ function medial_axis(img_bin, pts_n)
     xs = xs[crop_min:crop_max]
     ys = ys[crop_min:crop_max]
 
-    xs, ys
+    xs, ys, pts_order
 end
+
 
 function nn_dist(t, spl)
     spl_pts = spl(t, 1:2)
