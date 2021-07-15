@@ -98,7 +98,7 @@ function longest_shortest(param, xs, ys; prev_spl_pts=nothing)
     list_paths[idx_long_short][2] .+ 1 # path_longest_shortest
 end
 
-function medial_axis_new(param, img_bin, pts_n; prev_spl_pts=nothing, prev_pts_order=nothing)
+function medial_axis(param, img_bin, pts_n; prev_spl_pts=nothing, prev_pts_order=nothing)
     # medial axis extraction
     img_med_axis = py_ski_morphology.medial_axis(img_bin)
     array_pts = cat(map(x->[x[2], x[1]], findall(img_med_axis))..., dims=2)
