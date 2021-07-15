@@ -99,7 +99,7 @@ function longest_shortest(param, xs, ys; prev_med_axis=nothing)
 end
 
 
-function generate_med_axis_mask(img_bin_size, prev_med_axis)
+function generate_med_axis_mask(param, img_bin_size, prev_med_axis)
     mask = ones(Bool, img_bin_size)
     s = length(prev_med_axis[1])
     Threads.@threads for i=1:size(mask,1)
@@ -136,7 +136,7 @@ function medial_axis(param, img_bin, pts_n; prev_med_axis=nothing, prev_pts_orde
             return xs, ys, pts_order
         end
         
-        mask = generate_med_axis_mask(size(img_bin), prev_med_axis)
+        mask = generate_med_axis_mask(param, size(img_bin), prev_med_axis)
         img_med_axis = py_ski_morphology.medial_axis(img_bin, mask=mask)
         img_med_axis[Bool.(true .- mask)] .= false
     else
