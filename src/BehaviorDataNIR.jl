@@ -35,6 +35,7 @@ export
     diff_lag,
     vec_ang,
     read_h5,
+    read_pos_feature,
     recenter_angle,
     vec_to_angle,
     make_vec,
