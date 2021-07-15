@@ -125,7 +125,7 @@ function medial_axis(param, img_bin, pts_n; prev_med_axis=nothing, prev_pts_orde
         array_pts = cat(map(x->[x[2], x[1]], findall(img_med_axis))..., dims=2)
         xs = array_pts[2,:]
         ys = array_pts[1,:]
-        pts_order = longest_shortest(param, xs, ys, prev_spl_pts=prev_spl_pts)
+        pts_order = longest_shortest(param, xs, ys, prev_med_axis=prev_med_axis)
     end
 
     # reorder points
