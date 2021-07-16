@@ -76,6 +76,11 @@ function longest_shortest(param, xs, ys; prev_med_axis=nothing)
                g_arr[edge[1]+1,edge[2]+1] = 0
                g_arr[edge[2]+1,edge[1]+1] = 0
             end
+            # don't include edges that have to hop over barriers
+            if euclidean_dist((xs[edge[1]+1], ys[edge[1]+1]), (xs[edge[2]+1], ys[edge[2]+1])) > 1.5
+                g_arr[edge[1]+1,edge[2]+1] = 0
+                g_arr[edge[2]+1,edge[1]+1] = 0
+            end
         end
         g_mat = py_nx.to_networkx_graph(g_arr)
     end
