@@ -220,7 +220,7 @@ function medial_axis(param, img_bin, pts_n; prev_med_axis=nothing, prev_pts_orde
         
         # can't solve omega turns until we have worm thickness
         if isnothing(worm_thickness)
-            return nothing, nothing, nothing, is_omega
+            return xs, ys, pts_order, is_omega
         end
         
         mask = generate_med_axis_mask(param, prev_med_axis, worm_thickness, size(img_bin))
@@ -273,9 +273,14 @@ function compute_worm_spline!(param, path_h5, worm_seg_model, worm_thickness, me
         rng = 1:size(pos_feature_unet,3)
     end
 
+    omega_flag = false
+
     @showprogress for idx in rng
         try
-            if timepts == "omega" && !is_omega_dict[idx]
+            if omega_dict[idx]
+                omega_flag = true
+            end
+            if timepts == "omega" && !omega_flag
                 continue
             end
             # initialize dictionaries in case of crash
@@ -297,12 +302,11 @@ function compute_worm_spline!(param, path_h5, worm_seg_model, worm_thickness, me
             pts_order_dict[idx] = pts_order
             med_axis_dict[idx] = (med_xs, med_ys)
             is_omega_dict[idx] = is_omega
-            
-            # have not initialized worm thickness yet, must wait for non-omega events to complete
-            if isnothing(med_xs)
-                med_axis_dict[idx] = nothing
-                continue
+
+            if !is_omega
+                omega_flag = false
             end
+            
             spl_data, spl = fit_spline(param, med_xs, med_ys, pts_n, n_subsample=15)
             spl_pts = spl(0:spline_interval:1, 1:2)
 
