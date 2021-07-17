@@ -194,7 +194,8 @@ function medial_axis_from_py(param, img_med_axis, pts_n, img_size; prev_med_axis
     # crop out points in front of the nose - don't do this if low confidence
     if pts_n[3] > param["nose_confidence_threshold"]
         min_dist = Inf
-        for i=1:length(xs)
+        # don't crop points too far away from nose
+        for i=1:min(length(xs), param["nose_crop_threshold"])
             d = euclidean_dist((xs[i], ys[i]), pts_n[1:2])
             if d < min_dist
                 min_dist = d
@@ -211,12 +212,19 @@ end
 function medial_axis(param, img_bin, pts_n; prev_med_axis=nothing, prev_pts_order=nothing, worm_thickness=nothing)
     is_omega = false
     if !isnothing(prev_pts_order)
-        xs, ys, pts_order, is_omega = medial_axis(param, img_bin, pts_n)
-        if (length(pts_order) > length(prev_pts_order) - param["med_axis_shorten_threshold"]) && 
-                !self_proximity_detector(param, prev_med_axis[1], prev_med_axis[2])
-            return xs, ys, pts_order, is_omega
+        # this code can crash if the worm is circular - in which case, use omega routine
+        try
+            xs, ys, pts_order, is_omega = medial_axis(param, img_bin, pts_n)
+            if (length(pts_order) > length(prev_pts_order) - param["med_axis_shorten_threshold"]) && 
+                    !self_proximity_detector(param, prev_med_axis[1], prev_med_axis[2])
+                return xs, ys, pts_order, is_omega
+            end
+        catch e
+            is_omega = true
+            xs = prev_med_axis[1]
+            ys = prev_med_axis[2]
+            pts_order = prev_pts_order
         end
-        is_omega = true
         
         # can't solve omega turns until we have worm thickness
         if isnothing(worm_thickness)
@@ -289,6 +297,9 @@ function compute_worm_spline!(param, path_h5, worm_seg_model, worm_thickness, me
             is_omega_dict[idx] = false
             pts = pos_feature_unet[:,:,idx]
             pts_n = pts[1, :]
+            
+            # don't trust nose if other points are inaccurate
+            pts_n[3] = minimum(pts[:,3])
 
             f = h5open(path_h5)
             img_raw = f["img_nir"][:,:,idx]
