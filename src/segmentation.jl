@@ -256,7 +256,7 @@ function get_img_boundary(img_bin; thickness=1)
 end
 
 
-function compute_worm_spline!(param, path_h5, path_weight, worm_thickness, med_axis_dict, pts_order_dict, is_omega_dict,
+function compute_worm_spline!(param, path_h5, worm_seg_model, worm_thickness, med_axis_dict, pts_order_dict, is_omega_dict,
         x_array, y_array, nir_worm_angle, eccentricity; timepts="all")
 
     spline_interval = 1/param["num_center_pts"]
@@ -267,7 +267,6 @@ function compute_worm_spline!(param, path_h5, path_weight, worm_thickness, med_a
     pos_feature, pos_feature_unet = read_pos_feature(f)
     close(f)
 
-    worm_seg_model = create_model(1, 1, 16, path_weight);
 
     rng = timepts
     if typeof(timepts) == String
@@ -332,7 +331,7 @@ function compute_worm_spline!(param, path_h5, path_weight, worm_thickness, med_a
     return errors
 end
 
-function compute_worm_thickness(param, path_h5, med_axis_dict, is_omega_dict)
+function compute_worm_thickness(param, path_h5, worm_seg_model, med_axis_dict, is_omega_dict)
     lengths = Dict()
     for x in keys(med_axis_dict)
         if !isnothing(med_axis_dict[x]) && (!(x in keys(is_omega_dict)) || !is_omega_dict[x])
