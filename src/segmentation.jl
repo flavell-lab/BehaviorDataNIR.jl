@@ -336,7 +336,7 @@ function compute_worm_thickness(param, path_h5, med_axis_dict, is_omega_dict)
     lengths = Dict()
     for x in keys(med_axis_dict)
         if !isnothing(med_axis_dict[x]) && (!(x in keys(is_omega_dict)) || !is_omega_dict[x])
-            lengths[x] = length(data_dict["med_axis_dict"][x][1])
+            lengths[x] = length(med_axis_dict[x][1])
         end
     end
     low = Int32(floor(percentile(values(lengths), param["min_len_percent"])))
