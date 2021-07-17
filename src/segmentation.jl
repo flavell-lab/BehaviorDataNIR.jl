@@ -1,5 +1,3 @@
-euclidean_dist(x1, x2) = norm(x1 .- x2, 2)
-
 function downsample_unet_input(img)
     @assert(size(img) == (968, 732))
     img = Float32.(img[4:963, 4:723])
