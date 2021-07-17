@@ -332,6 +332,8 @@ function compute_worm_spline!(param, path_h5, worm_seg_model, worm_thickness, me
 end
 
 function compute_worm_thickness(param, path_h5, worm_seg_model, med_axis_dict, is_omega_dict)
+    img_label = zeros(Int32, param["img_label_size"][1], param["img_label_size"][2])
+
     lengths = Dict()
     for x in keys(med_axis_dict)
         if !isnothing(med_axis_dict[x]) && (!(x in keys(is_omega_dict)) || !is_omega_dict[x])
