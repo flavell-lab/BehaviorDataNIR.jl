@@ -105,7 +105,7 @@ end
 function generate_img_reconstruction(prev_med_axis, worm_thickness, img_size; trim=0, thickness=1, pad=0, recent_spline_len=1)
     img_reconstruct = zeros(Bool, img_size)
     points_added = Dict()
-    len = min(length(prev_med_axis[1]),length(dists))-trim
+    len = min(length(prev_med_axis[1]),length(worm_thickness))-trim
     for z in trim+1:len
         d = Int32(round(worm_thickness[z])) + thickness + pad
         for x=max(prev_med_axis[1][z]-d,1):min(prev_med_axis[1][z]+d,img_size[1])
