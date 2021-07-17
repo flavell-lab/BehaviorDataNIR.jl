@@ -257,6 +257,115 @@ function get_img_boundary(img_bin; thickness=1)
     return boundary
 end
 
+
+function compute_worm_spline!(param, path_h5, path_weight, worm_thickness, med_axis_dict, pts_order_dict, is_omega_dict,
+        x_array, y_array, nir_worm_angle, eccentricity; timepts="all")
+
+    spline_interval = 1/param["num_center_pts"]
+    img_label = zeros(Int32, param["img_label_size"][1], param["img_label_size"][2])
+    new_error_idx_lst = []
+
+    f = h5open(path_h5)
+    pos_feature, pos_feature_unet = read_pos_feature(f)
+    close(f)
+
+    worm_seg_model = create_model(1, 1, 16, path_weight);
+
+    rng = timepts
+    if typeof(timepts) == String
+        rng = 1:size(pos_feature_unet,3)
+    end
+
+    @showprogress for idx in rng
+        @suppress begin
+            try
+                if timepts == "omega" && !is_omega_dict[idx]
+                    continue
+                end
+                # initialize dictionaries in case of crash
+                pts_order_dict[idx] = pts_order_dict[idx-1]
+                med_axis_dict[idx] = med_axis_dict[idx-1]
+                is_omega_dict[idx] = false
+                pts = pos_feature_unet[:,:,idx]
+                pts_n = pts[1, :]
+
+                f = h5open(path_h5)
+                img_raw = f["img_nir"][:,:,idx]
+                close(f)
+                img_raw_ds, img_bin = segment_worm!(worm_seg_model, img_raw, img_label)
+
+                img_bin = Int32.(img_bin)
+
+                med_xs, med_ys, pts_order, is_omega = medial_axis(param, img_bin, pts_n,
+                    prev_med_axis=med_axis_dict[idx-1], prev_pts_order=pts_order_dict[idx-1], worm_thickness=worm_thickness)
+                pts_order_dict[idx] = pts_order
+                med_axis_dict[idx] = (med_xs, med_ys)
+                is_omega_dict[idx] = is_omega
+                
+                # have not initialized worm thickness yet, must wait for non-omega events to complete
+                if isnothing(med_xs)
+                    continue
+                end
+                spl_data, spl = fit_spline(param, med_xs, med_ys, pts_n, n_subsample=15)
+                spl_pts = spl(0:spline_interval:1, 1:2)
+
+                x_array[idx, :] = spl_pts[:, 1] # timept x spline points
+                y_array[idx, :] = spl_pts[:, 2] # timept x spline points
+
+                # get worm axis with PCA on binary image
+                worm_pts = map(x->collect(Tuple(x)), filter(x->img_bin[x]!=0, CartesianIndices(img_bin)))
+                worm_centroid = reduce((x,y)->x.+y, worm_pts) ./ length(worm_pts)
+                deltas = map(x->collect(x.-worm_centroid), worm_pts)
+                cov_mat = cov(deltas)
+                mat_eigvals = eigvals(cov_mat)
+                mat_eigvecs = eigvecs(cov_mat)
+                eigvals_order = sortperm(mat_eigvals, rev=true)
+                long_axis = mat_eigvecs[eigvals_order[1],:]
+                angle = vec_to_angle(long_axis)[1]
+                angle_cn = vec_to_angle(worm_centroid .- pts_n[1:2])[1]
+                if abs(recenter_angle(angle - angle_cn)) > pi/2
+                    angle = recenter_angle(angle+pi)
+                end
+                nir_worm_angle[idx] = recenter_angle(angle)
+                eccentricity[idx] = mat_eigvals[eigvals_order[1]] / mat_eigvals[eigvals_order[2]]
+                catch e
+                    push!(new_error_idx_lst,idx)
+                end
+        end
+    end
+    return new_error_idx_lst
+end
+
+function compute_worm_thickness(param, path_h5, med_axis_dict, is_omega_dict)
+    lengths = Dict()
+    for x in keys(med_axis_dict)
+        if !isnothing(med_axis_dict[x]) && (!(x in keys(is_omega_dict)) || !is_omega_dict[x])
+            lengths[x] = length(data_dict["med_axis_dict"][x][1])
+        end
+    end
+    low = Int32(floor(percentile(values(lengths), param["min_len_percent"])))
+    high = percentile(values(lengths), param["max_len_percent"])
+
+    dists = zeros(length([idx for idx in keys(lengths) if lengths[idx] >= low && lengths[idx] <= high]), low)
+
+    count = 1
+    @showprogress for idx in keys(lengths)
+        if lengths[idx] >= low && lengths[idx] <= high
+            f = h5open(path_h5)
+            img_raw = f["img_nir"][:,:,idx]
+            close(f)
+            
+            img_raw_ds, img_bin = segment_worm!(worm_seg_model, img_raw, img_label)
+            img_bin = Bool.(true .- img_bin)
+
+            dt = distance_transform(feature_transform(img_bin))
+            dists[count,:] .= [dt[med_axis_dict[idx][1][x], med_axis_dict[idx][2][x]] for x=1:length(med_axis_dict[idx][1])][1:low]
+            count += 1
+        end
+    end
+    return mean(dists, dims=1)[1,:], count
+end
+
 function nn_dist(t, spl)
     spl_pts = spl(t, 1:2)
 
