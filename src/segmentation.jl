@@ -277,60 +277,58 @@ function compute_worm_spline!(param, path_h5, path_weight, worm_thickness, med_a
     end
 
     @showprogress for idx in rng
-        @suppress begin
-            try
-                if timepts == "omega" && !is_omega_dict[idx]
-                    continue
-                end
-                # initialize dictionaries in case of crash
-                pts_order_dict[idx] = pts_order_dict[idx-1]
-                med_axis_dict[idx] = med_axis_dict[idx-1]
-                is_omega_dict[idx] = false
-                pts = pos_feature_unet[:,:,idx]
-                pts_n = pts[1, :]
+        try
+            if timepts == "omega" && !is_omega_dict[idx]
+                continue
+            end
+            # initialize dictionaries in case of crash
+            pts_order_dict[idx] = pts_order_dict[idx-1]
+            med_axis_dict[idx] = med_axis_dict[idx-1]
+            is_omega_dict[idx] = false
+            pts = pos_feature_unet[:,:,idx]
+            pts_n = pts[1, :]
 
-                f = h5open(path_h5)
-                img_raw = f["img_nir"][:,:,idx]
-                close(f)
-                img_raw_ds, img_bin = segment_worm!(worm_seg_model, img_raw, img_label)
+            f = h5open(path_h5)
+            img_raw = f["img_nir"][:,:,idx]
+            close(f)
+            img_raw_ds, img_bin = segment_worm!(worm_seg_model, img_raw, img_label)
 
-                img_bin = Int32.(img_bin)
+            img_bin = Int32.(img_bin)
 
-                med_xs, med_ys, pts_order, is_omega = medial_axis(param, img_bin, pts_n,
-                    prev_med_axis=med_axis_dict[idx-1], prev_pts_order=pts_order_dict[idx-1], worm_thickness=worm_thickness)
-                pts_order_dict[idx] = pts_order
-                med_axis_dict[idx] = (med_xs, med_ys)
-                is_omega_dict[idx] = is_omega
-                
-                # have not initialized worm thickness yet, must wait for non-omega events to complete
-                if isnothing(med_xs)
-                    continue
-                end
-                spl_data, spl = fit_spline(param, med_xs, med_ys, pts_n, n_subsample=15)
-                spl_pts = spl(0:spline_interval:1, 1:2)
+            med_xs, med_ys, pts_order, is_omega = medial_axis(param, img_bin, pts_n,
+                prev_med_axis=med_axis_dict[idx-1], prev_pts_order=pts_order_dict[idx-1], worm_thickness=worm_thickness)
+            pts_order_dict[idx] = pts_order
+            med_axis_dict[idx] = (med_xs, med_ys)
+            is_omega_dict[idx] = is_omega
+            
+            # have not initialized worm thickness yet, must wait for non-omega events to complete
+            if isnothing(med_xs)
+                continue
+            end
+            spl_data, spl = fit_spline(param, med_xs, med_ys, pts_n, n_subsample=15)
+            spl_pts = spl(0:spline_interval:1, 1:2)
 
-                x_array[idx, :] = spl_pts[:, 1] # timept x spline points
-                y_array[idx, :] = spl_pts[:, 2] # timept x spline points
+            x_array[idx, :] = spl_pts[:, 1] # timept x spline points
+            y_array[idx, :] = spl_pts[:, 2] # timept x spline points
 
-                # get worm axis with PCA on binary image
-                worm_pts = map(x->collect(Tuple(x)), filter(x->img_bin[x]!=0, CartesianIndices(img_bin)))
-                worm_centroid = reduce((x,y)->x.+y, worm_pts) ./ length(worm_pts)
-                deltas = map(x->collect(x.-worm_centroid), worm_pts)
-                cov_mat = cov(deltas)
-                mat_eigvals = eigvals(cov_mat)
-                mat_eigvecs = eigvecs(cov_mat)
-                eigvals_order = sortperm(mat_eigvals, rev=true)
-                long_axis = mat_eigvecs[eigvals_order[1],:]
-                angle = vec_to_angle(long_axis)[1]
-                angle_cn = vec_to_angle(worm_centroid .- pts_n[1:2])[1]
-                if abs(recenter_angle(angle - angle_cn)) > pi/2
-                    angle = recenter_angle(angle+pi)
-                end
-                nir_worm_angle[idx] = recenter_angle(angle)
-                eccentricity[idx] = mat_eigvals[eigvals_order[1]] / mat_eigvals[eigvals_order[2]]
-                catch e
-                    push!(new_error_idx_lst,idx)
-                end
+            # get worm axis with PCA on binary image
+            worm_pts = map(x->collect(Tuple(x)), filter(x->img_bin[x]!=0, CartesianIndices(img_bin)))
+            worm_centroid = reduce((x,y)->x.+y, worm_pts) ./ length(worm_pts)
+            deltas = map(x->collect(x.-worm_centroid), worm_pts)
+            cov_mat = cov(deltas)
+            mat_eigvals = eigvals(cov_mat)
+            mat_eigvecs = eigvecs(cov_mat)
+            eigvals_order = sortperm(mat_eigvals, rev=true)
+            long_axis = mat_eigvecs[eigvals_order[1],:]
+            angle = vec_to_angle(long_axis)[1]
+            angle_cn = vec_to_angle(worm_centroid .- pts_n[1:2])[1]
+            if abs(recenter_angle(angle - angle_cn)) > pi/2
+                angle = recenter_angle(angle+pi)
+            end
+            nir_worm_angle[idx] = recenter_angle(angle)
+            eccentricity[idx] = mat_eigvals[eigvals_order[1]] / mat_eigvals[eigvals_order[2]]
+        catch e
+            push!(new_error_idx_lst,idx)
         end
     end
     return new_error_idx_lst

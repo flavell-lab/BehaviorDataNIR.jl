@@ -2,7 +2,7 @@ module BehaviorDataNIR
 
 using Impute, LinearAlgebra, ProgressMeter, HDF5, Images, Statistics,
     FlavellBase, HMMBase, UNet2D, SegmentationStats, StatsBase,
-    Combinatorics, LinearAlgebra, Interpolations, PyCall, Optim
+    Combinatorics, LinearAlgebra, Interpolations, PyCall, Optim, Suppressor
 
 include("analysis.jl")
 include("unit.jl")
@@ -53,6 +53,8 @@ export
     segment_worm!,
     medial_axis,
     fit_spline,
+    compute_worm_spline!,
+    compute_worm_thickness,
     # spline_data.jl
     get_worm_body_angle,
     get_worm_vector,
