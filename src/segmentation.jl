@@ -104,20 +104,48 @@ function longest_shortest(param, xs, ys; prev_med_axis=nothing)
 end
 
 
-function generate_med_axis_mask(param, img_bin_size, prev_med_axis)
-    mask = ones(Bool, img_bin_size)
-    s = length(prev_med_axis[1])
-    Threads.@threads for i=1:size(mask,1)
-       for j=1:size(mask,2)
-            dist_arr = [euclidean_dist((i,j), (prev_med_axis[1][p], prev_med_axis[2][p])) for p in 1:s]
-            m = minimum(dist_arr)
-            close_pts = [p for p in 1:s if dist_arr[p] - m <= param["close_pts_threshold"]]
-            if maximum(close_pts) - minimum(close_pts) > param["loop_dist_threshold"]
-                mask[i,j] = false
+function generate_img_reconstruction(prev_med_axis, worm_thickness, img_size; trim=0, thickness=1, pad=0, recent_spline_len=1)
+    img_reconstruct = zeros(Bool, img_size)
+    points_added = Dict()
+    len = min(length(prev_med_axis[1]),length(dists))-trim
+    for z in trim+1:len
+        d = Int32(round(worm_thickness[z])) + thickness + pad
+        for x=max(prev_med_axis[1][z]-d,1):min(prev_med_axis[1][z]+d,img_size[1])
+            for y=max(prev_med_axis[2][z]-d,1):min(prev_med_axis[2][z]+d,img_size[2])
+                ed = euclidean_dist((x,y),(prev_med_axis[1][z],prev_med_axis[2][z]))
+                if ed < d && ed >= d - thickness
+                    img_reconstruct[x,y] = true
+                    if !((x,y) in keys(points_added))
+                        points_added[(x,y)] = [z]
+                    else
+                        append!(points_added[(x,y)], z)
+                    end
+                end
             end
-       end
+        end
     end
-    return mask
+    
+    for z in trim+1:len
+        d = Int32(round(worm_thickness[z])) + thickness + pad
+        for x=max(prev_med_axis[1][z]-d,1):min(prev_med_axis[1][z]+d,img_size[1])
+            for y=max(prev_med_axis[2][z]-d,1):min(prev_med_axis[2][z]+d,img_size[2])
+                ed = euclidean_dist((x,y),(prev_med_axis[1][z],prev_med_axis[2][z]))
+                if ed < d - thickness && img_reconstruct[x,y] && all([abs(w - z) <= recent_spline_len for w in points_added[(x,y)]])
+                    img_reconstruct[x,y] = false
+                end
+            end
+        end
+    end
+    
+    return img_reconstruct
+end
+
+function generate_med_axis_mask(param, prev_med_axis, worm_thickness, img_size)
+    img_reconstruct = generate_img_reconstruction(prev_med_axis, worm_thickness, img_size, 
+        trim=0, pad=param["worm_thickness_pad"], thickness=param["boundary_thickness"], recent_spline_len=param["close_pts_threshold"])
+    img_reconstruct_trim = generate_img_reconstruction(prev_med_axis, worm_thickness, img_size, 
+        trim=param["trim_head_tail"], pad=param["worm_thickness_pad"], thickness=param["boundary_thickness"], recent_spline_len=param["close_pts_threshold"])
+    return Bool.(true .- (img_reconstruct .& img_reconstruct_trim))
 end
 
 function self_proximity_detector(param, xs, ys)
@@ -134,21 +162,7 @@ function self_proximity_detector(param, xs, ys)
     return false
 end
 
-function medial_axis(param, img_bin, pts_n; prev_med_axis=nothing, prev_pts_order=nothing)
-    if !isnothing(prev_pts_order)
-        xs, ys, pts_order = medial_axis(param, img_bin, pts_n)
-        if (length(pts_order) > length(prev_pts_order) - param["med_axis_shorten_threshold"]) && !self_proximity_detector(param, xs, ys)
-            return xs, ys, pts_order
-        end
-        
-        mask = generate_med_axis_mask(param, size(img_bin), prev_med_axis)
-        img_med_axis = py_ski_morphology.medial_axis(img_bin, mask=mask)
-        img_med_axis[Bool.(true .- mask)] .= false
-    else
-        # medial axis extraction
-        img_med_axis = py_ski_morphology.medial_axis(img_bin)
-    end
-    
+function medial_axis_from_py(param, img_med_axis, pts_n; prev_med_axis=nothing)
     array_pts = cat(map(x->[x[2], x[1]], findall(img_med_axis))..., dims=2)
     xs = array_pts[2,:]
     ys = array_pts[1,:]
@@ -193,7 +207,54 @@ function medial_axis(param, img_bin, pts_n; prev_med_axis=nothing, prev_pts_orde
     xs = xs[crop_min:crop_max]
     ys = ys[crop_min:crop_max]
 
-    xs, ys, pts_order
+    return xs, ys, pts_order
+end
+
+function medial_axis(param, img_bin, pts_n; prev_med_axis=nothing, prev_pts_order=nothing, worm_thickness=nothing)
+    is_omega = false
+    if !isnothing(prev_pts_order)
+        xs, ys, pts_order, is_omega = medial_axis(param, img_bin, pts_n)
+        if (length(pts_order) > length(prev_pts_order) - param["med_axis_shorten_threshold"]) && 
+                !self_proximity_detector(param, prev_med_axis[1], prev_med_axis[2])
+            return xs, ys, pts_order, is_omega
+        end
+        is_omega = true
+        
+        # can't solve omega turns until we have worm thickness
+        if isnothing(worm_thickness)
+            return nothing, nothing, nothing, is_omega
+        end
+        
+        mask = generate_med_axis_mask(param, prev_med_axis, worm_thickness, size(img_bin))
+        img_med_axis = py_ski_morphology.medial_axis(img_bin, mask=mask)
+        img_med_axis[Bool.(true .- mask)] .= false
+    else
+        # medial axis extraction
+        img_med_axis = py_ski_morphology.medial_axis(img_bin)
+    end
+    
+    xs, ys, pts_order = medial_axis_from_py(param, img_med_axis, pts_n, prev_med_axis=prev_med_axis)
+    return xs, ys, pts_order, is_omega
+end
+
+function get_worm_thickness(img_bin, xs, ys)
+    dt = distance_transform(feature_transform(img_bin))
+    dists = [dt[xs[x], ys[x]] for x=1:length(xs)]
+    return dists
+end
+
+function get_img_boundary(img_bin; thickness=1)
+    boundary = zeros(Bool, size(img_bin))
+    for x=1:size(boundary,1)
+        for y=1:size(boundary,2)
+            if !img_bin[x,y] && 
+                any(img_bin[max(x-thickness,1):min(x+thickness,size(img_bin,1)),
+                        max(y-thickness,1):min(y+thickness,size(img_bin,2))])
+                boundary[x,y] = true
+            end
+        end
+    end
+    return boundary
 end
 
 function nn_dist(t, spl)
