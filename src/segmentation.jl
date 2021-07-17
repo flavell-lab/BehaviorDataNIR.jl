@@ -300,6 +300,7 @@ function compute_worm_spline!(param, path_h5, worm_seg_model, worm_thickness, me
             
             # have not initialized worm thickness yet, must wait for non-omega events to complete
             if isnothing(med_xs)
+                med_axis_dict[idx] = nothing
                 continue
             end
             spl_data, spl = fit_spline(param, med_xs, med_ys, pts_n, n_subsample=15)
