@@ -2,8 +2,9 @@ module BehaviorDataNIR
 
 using Impute, LinearAlgebra, ProgressMeter, HDF5, Images, Statistics,
     FlavellBase, HMMBase, UNet2D, SegmentationStats, StatsBase,
-    Combinatorics, LinearAlgebra, Interpolations, PyCall, Optim
+    Combinatorics, LinearAlgebra, Interpolations, PyCall, Optim, VideoIO
 
+include("init.jl")
 include("analysis.jl")
 include("unit.jl")
 include("util.jl")
@@ -12,7 +13,7 @@ include("cam_data.jl")
 include("sync.jl")
 include("segmentation.jl")
 include("spline_data.jl")
-include("init.jl")
+include("video.jl")
 
 export 
     # stage_data.jl
@@ -59,6 +60,8 @@ export
     get_worm_body_angle,
     get_worm_vector,
     # analysis.jl
-    get_tuning
+    get_tuning,
+    # video.jl,
+    write_behavior_video
 
 end # module
