@@ -261,7 +261,7 @@ function compute_worm_spline!(param, path_h5, path_weight, worm_thickness, med_a
 
     spline_interval = 1/param["num_center_pts"]
     img_label = zeros(Int32, param["img_label_size"][1], param["img_label_size"][2])
-    new_error_idx_lst = []
+    errors = Dict()
 
     f = h5open(path_h5)
     pos_feature, pos_feature_unet = read_pos_feature(f)
@@ -326,10 +326,10 @@ function compute_worm_spline!(param, path_h5, path_weight, worm_thickness, med_a
             nir_worm_angle[idx] = recenter_angle(angle)
             eccentricity[idx] = mat_eigvals[eigvals_order[1]] / mat_eigvals[eigvals_order[2]]
         catch e
-            push!(new_error_idx_lst,idx)
+            errors[idx] = e
         end
     end
-    return new_error_idx_lst
+    return errors
 end
 
 function compute_worm_thickness(param, path_h5, med_axis_dict, is_omega_dict)
