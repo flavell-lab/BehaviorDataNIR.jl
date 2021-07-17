@@ -160,7 +160,7 @@ function self_proximity_detector(param, xs, ys)
     return false
 end
 
-function medial_axis_from_py(param, img_med_axis, pts_n; prev_med_axis=nothing)
+function medial_axis_from_py(param, img_med_axis, pts_n, img_size; prev_med_axis=nothing)
     array_pts = cat(map(x->[x[2], x[1]], findall(img_med_axis))..., dims=2)
     xs = array_pts[2,:]
     ys = array_pts[1,:]
@@ -179,7 +179,7 @@ function medial_axis_from_py(param, img_med_axis, pts_n; prev_med_axis=nothing)
         reverse!(ys)
     end
 
-    s = size(img_bin)
+    s = img_size
 
     # crop out points that hit the edge of frame
     crop_max = length(xs)
@@ -231,7 +231,7 @@ function medial_axis(param, img_bin, pts_n; prev_med_axis=nothing, prev_pts_orde
         img_med_axis = py_ski_morphology.medial_axis(img_bin)
     end
     
-    xs, ys, pts_order = medial_axis_from_py(param, img_med_axis, pts_n, prev_med_axis=prev_med_axis)
+    xs, ys, pts_order = medial_axis_from_py(param, img_med_axis, pts_n, size(img_bin), prev_med_axis=prev_med_axis)
     return xs, ys, pts_order, is_omega
 end
 
