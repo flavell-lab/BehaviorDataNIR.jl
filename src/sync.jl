@@ -76,9 +76,9 @@ function detect_confocal_timing(ai_laser)
     list_confocal_on = findall(diff(ai_laser_bin) .== 1) .+ 1
     list_confocal_off = findall(diff(ai_laser_bin) .== -1) .+ 1
 
-    list_stack_start = list_confocal_on[findall(diff(list_confocal_on) .> 300) .+ 1]
+    list_stack_start = list_confocal_on[findall(diff(list_confocal_on) .> 150) .+ 1]
     prepend!(list_stack_start, list_confocal_on[1])
-    list_stack_stop = list_confocal_off[findall(diff(list_confocal_off) .> 300)]
+    list_stack_stop = list_confocal_off[findall(diff(list_confocal_off) .> 150)]
     append!(list_stack_stop, list_confocal_off[end])
 
     if length(list_stack_start) != length(list_stack_stop)
