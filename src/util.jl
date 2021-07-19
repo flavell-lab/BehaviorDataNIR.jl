@@ -23,8 +23,8 @@ end
 function read_stage(path_h5::String)
     h5open(path_h5, "r") do h5f
         pos_stage = read(h5f, "pos_stage")
+        return pos_stage
     end
-    return pos_stage
 end
 
 
