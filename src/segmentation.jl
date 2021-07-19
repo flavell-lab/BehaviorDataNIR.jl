@@ -288,9 +288,7 @@ function compute_worm_spline!(param, path_h5, worm_seg_model, worm_thickness, me
             if idx in keys(is_omega_dict) && is_omega_dict[idx]
                 omega_flag = true
             end
-            if timepts == "omega" && !omega_flag
-                continue
-            end
+
             # initialize dictionaries in case of crash
             pts_order_dict[idx] = pts_order_dict[idx-1]
             med_axis_dict[idx] = med_axis_dict[idx-1]
@@ -422,4 +420,44 @@ function fit_spline(param, xs, ys, pts_n; n_subsample=15)
     x_opt = res_dist.minimizer
 
     return spl_data, fit_spline(spl_init(x_opt, 1:2))
+end
+
+"""
+Computes equally-spaced points along the worm spline.
+
+# Arguments:
+- `param`: Dictionary of parameters that includes the following values:
+    - `num_center_pts`: Number of points along the spline
+    - `segment_len`: Length of each segment
+- `x_array`: x-locations of spline at each time point
+- `y_array`: y-locations of spline at each time point
+"""
+function get_segment_end_matrix(param, x_array, y_array)
+    segment_end_matrix = []
+    num_center_pts = param["num_center_pts"]
+    segment_len = param["segment_len"]
+    @showprogress for t = 1 : size(x_array, 1)
+        idx = 1
+        segment_end_lst = []
+        sum_segment = 0
+
+        while idx < num_center_pts
+            while sum_segment < segment_len
+                sum_segment += euclidean_dist((x_array[t, idx + 1], y_array[t, idx + 1]),
+                    (x_array[t, idx], y_array[t, idx]))
+                idx += 1
+
+                if idx == num_center_pts
+                    break
+                end
+
+            end
+            sum_segment -= segment_len
+
+            push!(segment_end_lst, idx)
+        end
+        
+        push!(segment_end_matrix, segment_end_lst)
+    end
+    return segment_end_matrix
 end

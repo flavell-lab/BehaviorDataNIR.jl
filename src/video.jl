@@ -55,3 +55,9 @@ function ds(img)
     round.(UInt8, (img[1:2:end-1,1:2:end-1] .+ img[2:2:end,2:2:end] .+
             img[1:2:end-1,2:2:end] .+ img[2:2:end,1:2:end-1]) ./ 4)
 end
+
+
+function encode_movie(input, output; fps=30)
+    run(`ffmpeg -hide_banner -loglevel panic -y -framerate $fps -i $input -c:v libx264 -pix_fmt yuv420p -preset slow -b:v 16M $output`)
+    nothing
+end;

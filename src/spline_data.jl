@@ -40,4 +40,22 @@ function get_worm_body_angle(x_array, y_array, segment_end_matrix, pts)
     return recenter_angle.(vec_to_angle(vec[2]) .- vec_to_angle(vec[1]))
 end
 
+"""
+Computes total worm curvature
 
+# Arguments:
+- `body_angle`: Array of worm body angles
+- `min_len`: If there aren't this many angles at a given time point, interpolate that time point instead of computing it
+"""
+function get_tot_worm_curvature(body_angle, min_len)
+    worm_curvature = zeros(size(body_angle,2))
+    for t=1:size(body_angle,2)
+        all_angles = [body_angle[i,t] for i=1:size(body_angle,1) if !isnan(body_angle[i,t])]
+        if length(all_angles) < min_len
+            worm_curvature[t] = NaN
+        else
+            worm_curvature[t] = std(all_angles)
+        end
+    end
+    return impute_list(worm_curvature)
+end

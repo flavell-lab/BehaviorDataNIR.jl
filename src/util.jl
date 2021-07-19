@@ -14,11 +14,19 @@ function read_pos_feature(h5f::HDF5.File)
     pos_feature, pos_feature_unet
 end
 
-function read_pos_feature(path_h5)
+function read_pos_feature(path_h5::String)
     h5open(path_h5, "r") do h5f
         read_pos_feature(h5f)
     end
 end
+
+function read_stage(path_h5::String)
+    h5open(path_h5, "r") do h5f
+        pos_stage = read(h5f, "pos_stage")
+    end
+    return pos_stage
+end
+
 
 function read_h5(path_h5::String)
     h5open(path_h5, "r") do h5f
@@ -38,6 +46,17 @@ function recenter_angle(angle; ref=0)
 end
 
 """
+Recenters `angles` to be continuous
+"""
+function local_recenter_angle(angles)
+    new_angles = [angles[1]]
+    for i=2:length(angles)
+        push!(new_angles, recenter_angle(angles[i], ref=new_angles[i-1]))
+    end
+    return new_angles
+end
+
+"""
 Converts a vector into an angle in the lab `xy`-coordinate space.
 """
 function vec_to_angle(vec)
@@ -49,6 +68,13 @@ Creates a vector out of `x` and `y` position variables.
 """
 function make_vec(x::Array{<:AbstractFloat,1}, y::Array{<:AbstractFloat,1})
     convert(Array{Float64,2}, (hcat(x, y))') # can't do typeof(x) since it's 1D
+end
+
+"""
+Computes least squares error of a fit.
+"""
+function get_lsqerr(fit)
+    return sum(fit.resid .^ 2) / length(fit.resid)
 end
 
 """

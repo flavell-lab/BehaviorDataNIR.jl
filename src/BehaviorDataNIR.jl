@@ -26,6 +26,7 @@ export
     ang_btw_vec,
     reversal_state,
     offset_xy,
+    get_reversal_events,
     # unit.jl
     unit_bfs_pix_to_stage_unit,
     unit_stage_unit_to_mm,
@@ -37,9 +38,12 @@ export
     vec_ang,
     read_h5,
     read_pos_feature,
+    read_stage,
     recenter_angle,
+    local_recenter_angle,
     vec_to_angle,
     make_vec,
+    get_lsqerr,
     savitzky_golay_filter,
     euclidean_dist,
     # sync.jl
@@ -56,12 +60,17 @@ export
     fit_spline,
     compute_worm_spline!,
     compute_worm_thickness,
+    get_segment_end_matrix,
     # spline_data.jl
     get_worm_body_angle,
     get_worm_vector,
+    get_tot_worm_curvature,
     # analysis.jl
     get_tuning,
+    reversal_neuron_model_1,
+    reversal_neuron_model_2,
     # video.jl,
+    encode_movie,
     write_behavior_video
 
 end # module

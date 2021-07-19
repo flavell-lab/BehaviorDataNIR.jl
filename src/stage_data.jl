@@ -154,3 +154,43 @@ function offset_xy(x_imp, y_imp, x_array, y_array, segment_end_matrix, seg_range
     return (x_imp_offset, y_imp_offset, err_timepts)
 end
 
+"""
+Finds reversal events.
+
+# Arguments:
+- `param`: Dictionary containing the following variables:
+    - `rev_len_thresh`: Number of consecutive reversal time points necessary for a reversal event
+    - `rev_v_thresh`: Velocity threshold below which the worm is counted as reversing
+- `velocity`: Worm velocity
+- `t_range`: Time range over which to compute reversal events
+"""
+function get_reversal_events(param, velocity, t_range)
+    reversal_events = []
+    len_thresh = param["rev_len_thresh"]
+    reverse_length = 0
+    v_thresh = param["rev_v_thresh"]
+    t_inc = t_range
+    for t in 1:maximum(t_inc)
+        if velocity[t] < v_thresh && (t in t_inc || reverse_length > 0)
+            reverse_length += 1
+        elseif reverse_length >= len_thresh
+            push!(reversal_events, t-reverse_length:t-1)
+            reverse_length = 0
+        else
+            reverse_length = 0
+        end
+    end
+    all_rev = []
+    for x in reversal_events
+        if mean(velocity[x]) > v_thresh
+            continue
+        end
+        for y in x
+            if !(y in all_rev)
+                append!(all_rev, y)
+            end
+        end
+    end
+    return (reversal_events, all_rev)
+end
+
