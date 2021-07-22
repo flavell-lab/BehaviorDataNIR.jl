@@ -54,6 +54,7 @@ function get_tot_worm_curvature(body_angle, min_len)
         if length(all_angles) < min_len
             worm_curvature[t] = NaN
         else
+            all_angles = local_recenter_angle(all_angles)
             worm_curvature[t] = std(all_angles)
         end
     end

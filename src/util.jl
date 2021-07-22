@@ -46,12 +46,21 @@ function recenter_angle(angle; ref=0)
 end
 
 """
-Recenters `angles` to be continuous
+Recenters `angles` to be continuous. `delta` (default 10) is the timespan of reference angles.
 """
-function local_recenter_angle(angles)
+function local_recenter_angle(angles; delta=10)
     new_angles = [angles[1]]
     for i=2:length(angles)
-        push!(new_angles, recenter_angle(angles[i], ref=new_angles[i-1]))
+        if isnan(angles[i])
+            push!(new_angles, NaN)
+        else
+            ref_angles = new_angles[max(1,i-delta):i-1]
+            if all(isnan.(ref_angles))
+                push!(new_angles, angles[i])
+            else
+                push!(new_angles, recenter_angle(angles[i], ref=mean([x for x in ref_angles if !isnan(x)])))
+            end
+        end
     end
     return new_angles
 end
