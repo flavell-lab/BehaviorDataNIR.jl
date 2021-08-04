@@ -82,8 +82,8 @@ end
 """
 Computes least squares error of a fit.
 """
-function get_lsqerr(fit)
-    return sum(fit.resid .^ 2) / length(fit.resid)
+function get_lsqerr(fit, raw)
+    return sum(fit.resid .^ 2) / sum(raw .^ 2)
 end
 
 """
