@@ -194,3 +194,31 @@ function get_reversal_events(param, velocity, t_range)
     return (reversal_events, all_rev)
 end
 
+"""
+Computes the duration of each reversal event.
+
+# Arguments:
+- `reversals`: List of all time points where the worm is reversing
+- `max_t`: Maximum time point in dataset
+"""
+function compute_reversal_times(reversals, max_t)
+    rev_num = 0
+    rev_times = []
+    for t=1:max_t
+        if t in reversals 
+            if rev_num == 0
+                non_rev_vals = [T for T in t:max_t if !(T in reversals)]
+                if length(non_rev_vals) == 0
+                    rev_num = max_t - t
+                else
+                    rev_num = minimum(non_rev_vals) - t
+                end
+            end
+            append!(rev_times, rev_num)
+        else
+            append!(rev_times, 0)
+            rev_num = 0
+        end
+    end
+    return rev_times
+end

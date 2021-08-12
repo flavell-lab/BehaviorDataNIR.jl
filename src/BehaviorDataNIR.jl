@@ -27,6 +27,7 @@ export
     reversal_state,
     offset_xy,
     get_reversal_events,
+    compute_reversal_times,
     # unit.jl
     unit_bfs_pix_to_stage_unit,
     unit_stage_unit_to_mm,
@@ -67,8 +68,9 @@ export
     get_tot_worm_curvature,
     # analysis.jl
     get_tuning,
-    reversal_neuron_model_1,
-    reversal_neuron_model_2,
+    reversal_neuron_model,
+    forward_neuron_model,
+    turning_neuron_model,
     # video.jl,
     encode_movie,
     write_behavior_video
