@@ -71,7 +71,7 @@ end
 
 function time_axis(list::AbstractVector, lag=0; fps=FLIR_FPS)
     num_frame = maximum(size(list))
-    (2 * collect(1 : num_frame - lag) .+ lag) / 2 * 1 / fps
+    (2 * collect(1 + lag / 2 : num_frame - lag / 2) .+ lag / 2) / 2 * 1 / fps
 end
 
 function Δpos_angle(Δx, Δy)
@@ -120,4 +120,105 @@ end
 function reversal_state(list::Array{<:AbstractFloat,1}, A, B)
     hmm = HMM(A, B)
     viterbi(hmm, list)
+end
+
+"""
+Corrects x and y position variables to correspond to the worm centroid, rather than the worm pharynx.
+
+# Arguments:
+
+- `x_imp`: Pharynx `x` position
+- `y_imp`: Pharynx `y` position
+- `x_array`: Segmentation array in the `x`-dimension
+- `y_array`: Segmentation array in the `y`-dimension
+- `segment_end_matrix`: Matrix of consistently-spaced segmentation locations across time points
+- `seg_range`: Set of segmentation locations to use to compute the centroid (which will be the average of them)
+- `unbin_fn`: Function to undo binning used to make the segmentation matrix. Default `x->unit_bfs_pix_to_stage_unit(2*x+3)`
+"""
+function offset_xy(x_imp, y_imp, x_array, y_array, segment_end_matrix, seg_range; unbin_fn=x->unit_bfs_pix_to_stage_unit(2*x+3))
+    x_imp_offset = []
+    y_imp_offset = []
+    err_timepts = []
+    last_x_offset = 0
+    last_y_offset = 0
+    for t=1:length(x_imp)
+        if(length(segment_end_matrix[t]) >= maximum(seg_range) + 2)
+            last_x_offset = mean([unbin_fn(x_array[t,segment_end_matrix[t][i]]) for i in seg_range])
+            last_y_offset = mean([unbin_fn(y_array[t,segment_end_matrix[t][i]]) for i in seg_range])
+        else
+            push!(err_timepts, t)
+        end
+        push!(x_imp_offset, x_imp[t] - last_x_offset)
+        push!(y_imp_offset, y_imp[t] - last_y_offset)
+    end
+    return (x_imp_offset, y_imp_offset, err_timepts)
+end
+
+"""
+Finds reversal events.
+
+# Arguments:
+- `param`: Dictionary containing the following variables:
+    - `rev_len_thresh`: Number of consecutive reversal time points necessary for a reversal event
+    - `rev_v_thresh`: Velocity threshold below which the worm is counted as reversing
+- `velocity`: Worm velocity
+- `t_range`: Time range over which to compute reversal events
+"""
+function get_reversal_events(param, velocity, t_range)
+    reversal_events = []
+    len_thresh = param["rev_len_thresh"]
+    reverse_length = 0
+    v_thresh = param["rev_v_thresh"]
+    t_inc = t_range
+    for t in 1:maximum(t_inc)
+        if velocity[t] < v_thresh && (t in t_inc || reverse_length > 0)
+            reverse_length += 1
+        elseif reverse_length >= len_thresh
+            push!(reversal_events, t-reverse_length:t-1)
+            reverse_length = 0
+        else
+            reverse_length = 0
+        end
+    end
+    all_rev = []
+    for x in reversal_events
+        if mean(velocity[x]) > v_thresh
+            continue
+        end
+        for y in x
+            if !(y in all_rev)
+                append!(all_rev, y)
+            end
+        end
+    end
+    return (reversal_events, all_rev)
+end
+
+"""
+Computes the duration of each reversal event.
+
+# Arguments:
+- `reversals`: List of all time points where the worm is reversing
+- `max_t`: Maximum time point in dataset
+"""
+function compute_reversal_times(reversals, max_t)
+    rev_num = 0
+    rev_times = []
+    for t=1:max_t
+        if t in reversals 
+            if rev_num == 0
+                non_rev_vals = [T for T in t:max_t if !(T in reversals)]
+                if length(non_rev_vals) == 0
+                    rev_num = max_t - t
+                else
+                    rev_num = minimum(non_rev_vals) - t
+                end
+            end
+            append!(rev_times, rev_num)
+        else
+            append!(rev_times, 0)
+            rev_num = 0
+        end
+    end
+    return rev_times
 end
