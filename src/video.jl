@@ -19,7 +19,7 @@ Arguments
 A lower value generally leads to higher quality, and a subjectively sane range is 17–28.  
 Consider 17 or 18 to be visually lossless or nearly so; it should look the same or nearly the same as the input but it isn't technically lossless.  
 """
-function write_behavior_video2(path_h5, path_vid=nothing; fps=20, encoder_options=nothing, downsample=true,
+function write_behavior_video(path_h5, path_vid=nothing; fps=20, encoder_options=nothing, downsample=true,
         vars=nothing, text_pos=(5,5), text_size=20, text_font="Futura", text_spacing=1.05)
     path_vid = isnothing(path_vid) ? splitext(path_h5)[1] * "_$(fps)fps.mp4" : path_vid
     if splitext(path_vid)[2] !== ".mp4"
