@@ -1,7 +1,7 @@
 module BehaviorDataNIR
 
 using Impute, LinearAlgebra, ProgressMeter, HDF5, Images, Statistics,
-    FlavellBase, HMMBase, UNet2D, SegmentationStats, StatsBase,
+    FlavellBase, UNet2D, SegmentationStats, StatsBase,
     Combinatorics, Interpolations, PyCall, Optim, VideoIO, Luxor
 
 include("init.jl")

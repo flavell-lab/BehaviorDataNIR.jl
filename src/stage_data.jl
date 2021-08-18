@@ -115,13 +115,6 @@ function magnitude_vec(list_v::Array{<:AbstractFloat,2})
     sqrt.(list_v[1, :] .^ 2 .+ list_v[2, :] .^ 2)
 end
 
-# A = [0.9 0.1; 0.9 0.1] # transition matrix
-# B = [Normal(170,10), Normal(13,5)] # observation dist, mean and variance
-function reversal_state(list::Array{<:AbstractFloat,1}, A, B)
-    hmm = HMM(A, B)
-    viterbi(hmm, list)
-end
-
 """
 Corrects x and y position variables to correspond to the worm centroid, rather than the worm pharynx.
 
