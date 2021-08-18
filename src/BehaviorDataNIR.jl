@@ -2,7 +2,7 @@ module BehaviorDataNIR
 
 using Impute, LinearAlgebra, ProgressMeter, HDF5, Images, Statistics,
     FlavellBase, HMMBase, UNet2D, SegmentationStats, StatsBase,
-    Combinatorics, Interpolations, PyCall, Optim, VideoIO
+    Combinatorics, Interpolations, PyCall, Optim, VideoIO, Luxor
 
 include("init.jl")
 include("analysis.jl")
@@ -73,6 +73,7 @@ export
     turning_neuron_model,
     # video.jl,
     encode_movie,
-    write_behavior_video
+    write_behavior_video,
+    add_text_to_image
 
 end # module
