@@ -8,7 +8,7 @@ Arguments
 * `fps`: frame rate of the video (default: 20 to match the acquisition rate)  
 * `downsample`: if true downsample by factor of 2   
 * `encoder_options`: in named tuple (e.g. `(crf="23", preset="slow")`)
-* `vars`: variables to display in the video represented as a tuple `(varname, value_arr, color)` (default `nothing` which does not display any text)
+* `vars`: variables to display in the video represented as a tuple `(varname, value_arr, color)`. Default `nothing` which does not display any text
 * `text_pos`: position of variables text (default `(5,5)`)
 * `text_size`: size of variables text (default `20`)
 * `text_font`: font of variables text (default `Futura`)
