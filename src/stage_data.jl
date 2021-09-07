@@ -147,6 +147,22 @@ function offset_xy(x_imp, y_imp, x_array, y_array, segment_end_matrix, seg_range
     return (x_imp_offset, y_imp_offset, err_timepts)
 end
 
+function offset_xy(x_imp, y_imp, pos_med; unbin_fn=x->unit_bfs_pix_to_stage_unit(2*x+3))
+    x_imp_offset = []
+    y_imp_offset = []
+    err_timepts = []
+    last_x_offset = unbin_fn(pos_med[1,1])
+    last_y_offset = unbin_fn(pos_med[2,1])
+    for t=1:length(x_imp)
+        last_x_offset = unbin_fn(pos_med[1,t]) * pos_med[3,t] + last_x_offset * (1 - pos_med[3,t])
+        last_y_offset = unbin_fn(pos_med[2,t]) * pos_med[3,t] + last_y_offset * (1 - pos_med[3,t])
+        push!(x_imp_offset, x_imp[t] - last_x_offset)
+        push!(y_imp_offset, y_imp[t] - last_y_offset)
+    end
+    return (x_imp_offset, y_imp_offset)
+end
+
+
 """
 Finds reversal events.
 
