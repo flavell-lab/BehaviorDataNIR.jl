@@ -110,3 +110,36 @@ function encode_movie(input, output; fps=30)
     run(`ffmpeg -hide_banner -loglevel panic -y -framerate $fps -i $input -c:v libx264 -pix_fmt yuv420p -preset slow -b:v 16M $output`)
     nothing
 end;
+
+
+"""
+Writes maximum-intensity projection video of MHD data.
+
+# Arguments:
+- `param_path::Dict`: Parameter path dictionary containing `path_dir_mhd` and `get_basename` keys
+- `num_timepts`: Number of timepoints to create video of
+- `ch`: Confocal channel to use
+- `path_vid`: Path to output video
+- `fps` (default 20): frames per second
+- `encoder_options`: in named tuple (e.g. `(crf="23", preset="slow")`)
+"""
+function write_mip_video(param_path, num_timepts, ch, path_vid=nothing; fps=20, encoder_options=nothing)
+    path_vid = isnothing(path_vid) ? splitext(path_h5)[1] * "_$(fps)fps.mp4" : path_vid
+    if splitext(path_vid)[2] !== ".mp4"
+        error("`path_vid` extension must be .mp4")
+    end
+
+    encoder_options = (crf="23", preset="slow")
+    target_pix_fmt = VideoIO.AV_PIX_FMT_YUV420P
+
+    img_t1 = maxprj(read_img(MHD(joinpath(param_path["path_dir_mhd"], param_path["get_basename"](1, ch)*".mhd"))),dims=3)
+
+    open_video_out(path_vid, img_t1, framerate=20,
+        encoder_options=encoder_options, codec_name="libx264",
+        target_pix_fmt=target_pix_fmt) do vidf
+        @showprogress for t = 2:num_timepts
+            img_ = maxprj(read_img(MHD(joinpath(param_path["path_dir_mhd"], param_path["get_basename"](t, ch)*".mhd"))),dims=3)
+            write(vidf, img_)
+        end # t
+    end # vid
+end

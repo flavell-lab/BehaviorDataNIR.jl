@@ -66,9 +66,12 @@ export
     get_worm_body_angle,
     get_worm_vector,
     get_tot_worm_curvature,
+    self_intersect_ratio,
     # analysis.jl
     get_tuning,
     reversal_neuron_model,
+    RIM_model,
+    ewma,
     forward_neuron_model,
     turning_neuron_model,
     # video.jl,

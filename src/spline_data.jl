@@ -46,8 +46,9 @@ Computes total worm curvature
 # Arguments:
 - `body_angle`: Array of worm body angles
 - `min_len`: If there aren't this many angles at a given time point, interpolate that time point instead of computing it
+- `directional::Bool` (default `false`): Use directional curvature.
 """
-function get_tot_worm_curvature(body_angle, min_len)
+function get_tot_worm_curvature(body_angle, min_len; directional::Bool=false)
     worm_curvature = zeros(size(body_angle,2))
     for t=1:size(body_angle,2)
         all_angles = [body_angle[i,t] for i=1:size(body_angle,1) if !isnan(body_angle[i,t])]
@@ -55,8 +56,34 @@ function get_tot_worm_curvature(body_angle, min_len)
             worm_curvature[t] = NaN
         else
             all_angles = local_recenter_angle(all_angles)
-            worm_curvature[t] = std(all_angles)
+            if directional
+                worm_curvature[t] = (all_angles[1]-all_angles[min_len])/length(all_angles)
+            else
+                worm_curvature[t] = std(all_angles)
+            end
         end
     end
     return impute_list(worm_curvature)
+end
+
+
+
+""" Gets the smallest ratio between distance between two points in space and distance between them along the worm's curvature.
+A value of 0 means that the worm is intersecting itself, while a value of 1 means the worm is a straight line.
+
+# Arguments:
+- `med_axis`: Medial axis of the worm.
+- `max_i` (default `Inf`): Maximum location along the medium axis to try.
+"""
+function self_intersect_ratio(med_axis; max_i=Inf)
+    ratio = Inf
+    for i=1:length(med_axis[1])
+        if i > max_i
+            return ratio
+        end
+        for j=i+1:length(med_axis[1])
+            ratio = min(ratio, euclidean_dist((med_axis[1][i], med_axis[2][i]), (med_axis[1][j], med_axis[2][j]))/(j-i))
+        end
+    end
+    return ratio
 end

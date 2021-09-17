@@ -23,29 +23,68 @@ function get_tuning(activity, behavior, conv_fn; angle=nothing)
 end
 
 """
-Model for reversal neurons
+Model for Type-1 reversal neurons
 
 # Arguments:
 - `a`: Slope of activity rise in response to a reversal
-- `b`: Decay rate (0 = instantaneous, 1 = no decay)
-- `len_thresh`: Ignore reversal events with duration at most this. For type-1 neurons, set to 0.
-- `rev_lengths`: For each time point, 0 if the worm is going forward, or the duration of that reversal event if it's reversing
-- `max_t`: Maximum time point
+- `b`: Decay rate (0 = no decay)
+- `velocity`: Worm velocity
 - `init_activity` (default 0): Initial neuron activity
+- `v_thresh` (default 0): Velocity threshold
+- `vec_to_confocal`: If `velocity` is provided in the NIR time frame, a function that maps NIR to confocal time points.
 """
-function reversal_neuron_model(a, b, len_thresh, rev_lengths, max_t; init_activity=0)
+function reversal_neuron_model(a::Real, b::Real, velocity::Array{<:Real}; init_activity::Real=0, v_thresh::Real=0, vec_to_confocal::Function=identity)
     activity = []
     curr_activity = init_activity
-    curr_a = a
+    for t=1:length(velocity)
+        curr_activity -= a * min(velocity[t], v_thresh) + b * curr_activity
+        push!(activity, curr_activity)
+    end
+    return vec_to_confocal(activity .- mean(activity))
+end
+
+
+"""
+Model for the neuron RIM (aka Type-2 reversal neuron)
+
+# Arguments:
+- `a`: Slope of activity rise in response to a reversal
+- `b`: Decay rate (0 = no decay)
+- `velocity`: Worm velocity
+- `init_activity` (default 0): Initial neuron activity
+- `v_thresh` (default 0): Velocity threshold
+- `vec_to_confocal`: If `velocity` is provided in the NIR time frame, a function that maps NIR to confocal time points.
+"""
+function RIM_model(a::Real, b::Real, λ::Real, velocity::Array{<:Real}; init_activity::Real=0, v_thresh::Real=0, vec_to_confocal::Function=identity)
+    activity = []
+    curr_activity = init_activity
+    max_t = length(velocity)
+    v_avg = ewma(λ, velocity)
+            
     for t=1:max_t
-        if rev_lengths[t] > len_thresh
-            curr_activity += curr_a
-        else
-            curr_activity *= b
-        end
+        curr_activity -= a * min(v_avg[t], v_thresh) + b * curr_activity
         push!(activity, curr_activity)
     end
     return activity .- mean(activity)
+end
+
+"""
+Compute exponentially-averaged variable.
+
+# Arguments:
+- `λ`: Inverse timescale parameter. 0 = average all previous velocities, Inf = only current timepoint
+- `var`: Variable
+- `vec_to_confocal`: If `var` is provided in the NIR time frame, a function that maps NIR to confocal time points.
+"""
+function ewma(λ::Real, var::Array{<:Real}; vec_to_confocal::Function=identity)
+    max_t = length(var)
+    v_avg = zeros(max_t)
+    s = sum([exp(-(max_t-t)*λ) for t=1:max_t])
+    v_avg[1] = var[1]
+    for t=2:max_t
+        v_avg[t] = v_avg[t-1] * (s-1) / s + var[t] / s
+    end
+    return vec_to_confocal(v_avg)
 end
 
 """
