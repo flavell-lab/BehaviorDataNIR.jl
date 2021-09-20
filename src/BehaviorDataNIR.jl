@@ -54,6 +54,8 @@ export
     nir_vec_to_confocal,
     unlag_vec,
     nir_to_confocal_t,
+    get_timestamps,
+    fill_timeskip,
     # segmentation.jl
     downsample_unet_input,
     segment_worm!,

@@ -212,3 +212,51 @@ function nir_to_confocal_t(t, nir_to_confocal)
     end
     return 1
 end
+
+"""
+Gets NIR timestamps from the NIR data file
+"""
+function get_timestamps(path_h5)
+    f = h5open(path_h5, "r")
+    timestamps = f["img_metadata"]["img_timestamp"][:]
+    saving = f["img_metadata"]["q_iter_save"][:]
+    close(f)
+    return timestamps[saving] ./ 1e9
+end
+
+"""
+Fills in timeskips with multiple 0 datapoints for easier visualization.
+
+# Arguments:
+- `traces`: Traces matrix with timeskips
+- `timestamps`: Timestamps for all data points in the traces matrix
+- `min_timeskip_length` (default 5): Minimum difference (in seconds) between adjacent data points to qualify as a timeskip.
+- `timeskip_step` (default 1): Number of seconds per intermediate data point generated.
+"""
+function fill_timeskip(traces, timestamps; min_timeskip_length=5, timeskip_step=1)
+    timeskips = [t for t in 1:length(timestamps)-1 if diff(timestamps)[t] >= min_timeskip_length]
+    num_timeskips = length(timeskips)
+    new_traces = [[] for n=1:size(traces,1)]
+    new_timestamps = []
+    prev_timeskip = 1
+    for timeskip in timeskips
+        num_steps = floor((timestamps[timeskip+1] - timestamps[timeskip]) ÷ timeskip_step)
+        for n=1:size(traces,1)
+            append!(new_traces[n], traces[n,prev_timeskip:timeskip])
+            append!(new_traces[n], [0 for t=1:num_steps])
+        end
+        append!(new_timestamps, timestamps[prev_timeskip:timeskip])
+        append!(new_timestamps, [timestamps[timeskip] + t*timeskip_step for t=1:num_steps])
+    end
+    for n=1:size(traces,1)
+        append!(new_traces[n], traces[n,timeskips[end]+1:end])
+    end
+    append!(new_timestamps, timestamps[timeskips[end]+1:end])
+
+    new_traces_matrix = zeros(size(traces,1), length(new_traces[1]))
+    for n=1:size(traces,1)
+        new_traces_matrix[n,:] .= new_traces[n]
+    end
+    return new_traces_matrix, new_timestamps
+end        
+        
