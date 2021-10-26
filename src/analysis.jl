@@ -85,7 +85,7 @@ function ewma(λ, x::AbstractVector{T}; vec_to_confocal::Function=identity) wher
         x_avg[t] = T(x_avg[t-1] * (s-1) / s + x[t] / s)
     end
     
-    x_avg
+    vec_to_confocal(x_avg)
 end
     
 """
@@ -111,7 +111,7 @@ function ewma(λ, x::AbstractVector{T}, idx_splits; vec_to_confocal::Function=id
         return_array[split] = x_avg
     end
     
-    return return_array
+    return vec_to_confocal(return_array)
 end 
 
 """
