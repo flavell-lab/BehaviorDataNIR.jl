@@ -76,16 +76,16 @@ Compute exponentially-averaged variable.
 - `var`: Variable
 - `vec_to_confocal`: If `var` is provided in the NIR time frame, a function that maps NIR to confocal time points.
 """
-function ewma(λ, x::AbstractVector{T}; vec_to_confocal::Function=identity) where T
+function ewma(λ::T, x) where {T}
     max_t = length(x)
     x_avg = zeros(T, max_t)
     s = 1 / λ
-    x_avg[1] = T(x[1])
-    for t=2:max_t
-        x_avg[t] = T(x_avg[t-1] * (s-1) / s + x[t] / s)
+    x_avg[1] = x[1]
+    for t = 2:max_t
+        x_avg[t] = x_avg[t-1] * (s - 1) / s + x[t] / s
     end
     
-    vec_to_confocal(x_avg)
+    x_avg
 end
     
 """
@@ -97,7 +97,7 @@ Compute exponentially-averaged variable.
 - `vec_to_confocal`: If `var` is provided in the NIR time frame, a function that maps NIR to confocal time points.
 - `idx_splits`: list of time points for merged videos. e.g. `[1:800, 801:1600]`
 """
-function ewma(λ, x::AbstractVector{T}, idx_splits; vec_to_confocal::Function=identity) where T
+function ewma(λ::T, x, idx_splits) where {T}
     return_array = zeros(T, idx_splits[end][end])
     for split = idx_splits
         max_t = length(split)
@@ -111,8 +111,8 @@ function ewma(λ, x::AbstractVector{T}, idx_splits; vec_to_confocal::Function=id
         return_array[split] = x_avg
     end
     
-    return vec_to_confocal(return_array)
-end 
+    return return_array
+end
 
 """
 Model for forward neurons
