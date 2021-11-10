@@ -1,11 +1,12 @@
 module BehaviorDataNIR
 
 using Impute, LinearAlgebra, ProgressMeter, HDF5, Images, Statistics,
-    FlavellBase, UNet2D, SegmentationStats, StatsBase,
+    FlavellBase, UNet2D, SegmentationStats, StatsBase, TotalVariation,
     Combinatorics, Interpolations, PyCall, Optim, VideoIO, Luxor
 
 include("init.jl")
 include("analysis.jl")
+include("behaviors.jl")
 include("unit.jl")
 include("util.jl")
 include("stage_data.jl")
@@ -16,6 +17,14 @@ include("spline_data.jl")
 include("video.jl")
 
 export 
+    # behaviors.jl
+    get_body_angles!,
+    get_angular_velocity!,
+    get_velocity!,
+    get_curvature_variables!,
+    get_self_intersection!,
+    merge_nir_data!,
+    import_pumping!,
     # stage_data.jl
     zero_stage, 
     impute_list,
@@ -56,6 +65,7 @@ export
     nir_to_confocal_t,
     get_timestamps,
     fill_timeskip,
+    fill_timeskip_behavior,
     # segmentation.jl
     downsample_unet_input,
     segment_worm!,
@@ -71,11 +81,6 @@ export
     self_intersect_ratio,
     # analysis.jl
     get_tuning,
-    reversal_neuron_model,
-    RIM_model,
-    ewma,
-    forward_neuron_model,
-    turning_neuron_model,
     # video.jl,
     encode_movie,
     write_behavior_video,
