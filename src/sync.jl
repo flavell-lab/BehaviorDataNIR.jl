@@ -257,12 +257,12 @@ function fill_timeskip(traces, timestamps; min_timeskip_length=5, timeskip_step=
     for n=1:size(traces,1)
         new_traces_matrix[n,:] .= new_traces[n]
     end
-    return new_traces_matrix, new_timestamps
+    return new_timestamps, new_traces_matrix
 end        
         
 function fill_timeskip_behavior(behavior, timestamps; min_timeskip_length=5, timeskip_step=1, fill_val=NaN)
     vec = zeros(1, length(behavior))
     vec[1,:] .= behavior
-    new_vec, new_timestamps = fill_timeskip(vec, timestamps, min_timeskip_length=min_timeskip_length, timeskip_step=timeskip_step, fill_val=fill_val)
+    new_timestamps, new_vec = fill_timeskip(vec, timestamps, min_timeskip_length=min_timeskip_length, timeskip_step=timeskip_step, fill_val=fill_val)
     return new_timestamps, new_vec[1,:]
 end
