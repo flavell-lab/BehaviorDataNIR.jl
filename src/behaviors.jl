@@ -2,6 +2,7 @@
 Adds body angles to `data_dict` given `param`.
 """
 function get_body_angles!(data_dict::Dict, param::Dict)
+    vec_to_confocal = vec -> nir_vec_to_confocal(vec, data_dict["confocal_to_nir"], param["max_t"])
     s = size(data_dict["x_array"],1)
     m = maximum([length(x) for x in data_dict["segment_end_matrix"]])-1
     data_dict["nir_body_angle"] = zeros(param["max_pt"]-1,s)
@@ -47,6 +48,7 @@ end
 Gets angular velocity from `data_dict` and `param`.
 """
 function get_angular_velocity!(data_dict::Dict, param::Dict)
+    vec_to_confocal = vec -> nir_vec_to_confocal(vec, data_dict["confocal_to_nir"], param["max_t"])
     data_dict["worm_angle"] = vec_to_confocal(data_dict["nir_worm_angle"])
 
     turning_angle = impute_list(data_dict["body_angle_absolute"][param["head_pts"][1],:])
@@ -62,6 +64,7 @@ end
 Gets velocity, speed, reversal, and related variables from `data_dict` and `param`.
 """
 function get_velocity!(data_dict::Dict, param::Dict)
+    vec_to_confocal = vec -> nir_vec_to_confocal(vec, data_dict["confocal_to_nir"], param["max_t"])
     data_dict["filt_xmed"] = gstv(Float64.(data_dict["x_med"]), param["v_stage_m_filt"], param["v_stage_λ_filt"])
     data_dict["filt_ymed"] = gstv(Float64.(data_dict["y_med"]), param["v_stage_m_filt"], param["v_stage_λ_filt"]);
 
@@ -88,6 +91,7 @@ end
 Gets curvature, head angle, and related variables from `data_dict` and `param`.
 """
 function get_curvature_variables!(data_dict::Dict, param::Dict)
+    vec_to_confocal = vec -> nir_vec_to_confocal(vec, data_dict["confocal_to_nir"], param["max_t"])
     data_dict["worm_curvature"] = get_tot_worm_curvature(data_dict["body_angle"], size(data_dict["body_angle"],1));
     data_dict["ventral_worm_curvature"] = get_tot_worm_curvature(data_dict["body_angle"], size(data_dict["body_angle"],1), directional=true);
     data_dict["nir_head_angle"] = -get_worm_body_angle(data_dict["x_array"], data_dict["y_array"], data_dict["segment_end_matrix"], param["head_pts"])
@@ -101,6 +105,7 @@ end
 Gets self intersection variables from `data_dict` and `param`.
 """
 function get_self_intersection!(data_dict::Dict, param::Dict)
+    vec_to_confocal = vec -> nir_vec_to_confocal(vec, data_dict["confocal_to_nir"], param["max_t"])
     data_dict["nir_self_intersect_ratio"] = Vector{Float64}()
     data_dict["nir_self_intersect_ratio_head"] = Vector{Float64}()
     max_med_len = param["segment_len"] * param["max_pt"]
@@ -172,6 +177,7 @@ end
 Import pumping data into a combined dataset from a csv file.
 """
 function import_pumping!(combined_data_dict::Dict, path_pumping)
+    vec_to_confocal = vec -> nir_vec_to_confocal(vec, data_dict["confocal_to_nir"], param["max_t"])
     combined_data_dict["pumping_nir"] = Float64[]
     combined_data_dict["pumping_raw"] = Float64[]
     combined_data_dict["pumping"] = Float64[]
