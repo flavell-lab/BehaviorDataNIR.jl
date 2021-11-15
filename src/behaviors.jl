@@ -53,7 +53,7 @@ function get_angular_velocity!(data_dict::Dict, param::Dict)
 
     turning_angle = impute_list(data_dict["body_angle_absolute"][param["head_pts"][1],:])
 
-    data_dict["worm_head_facing_angle_filtered"] = gstv(turning_angle .- turning_angle[1], m, l);
+    data_dict["worm_head_facing_angle_filtered"] = gstv(turning_angle .- turning_angle[1], param["m_angvel"], param["l_angvel"]);
     data_dict["angular_velocity"] = zeros(param["max_t"])
     data_dict["angular_velocity"][2:end-1] = diff_lag(data_dict["worm_head_facing_angle_filtered"], 2)
     data_dict["angular_velocity"][1] = data_dict["angular_velocity"][2]
