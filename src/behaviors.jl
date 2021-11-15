@@ -79,8 +79,6 @@ function get_velocity!(data_dict::Dict, param::Dict)
     data_dict["mov_angle_stage"] = vec_to_confocal(data_dict["nir_mov_angle_stage"])
     data_dict["nir_speed_stage"] = speed(Δx, Δy, Δt)
     data_dict["speed_stage"] = vec_to_confocal(data_dict["nir_speed_stage"])
-    mn_vec, mp_vec, orthog_mp_vec = nmp_vec(pos_feature);
-    data_dict["pm_angle"] = vec_to_angle(mp_vec);
     data_dict["nir_velocity_stage"] = data_dict["nir_speed_stage"] .* cos.(data_dict["nir_mov_angle_stage"] .- data_dict["pm_angle"])
     data_dict["velocity_stage"] = vec_to_confocal(data_dict["nir_velocity_stage"])
     data_dict["reversal_events"], data_dict["all_rev"] = get_reversal_events(param, data_dict["velocity_stage"], param["t_range"]);
