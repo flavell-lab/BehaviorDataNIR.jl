@@ -66,6 +66,7 @@ export
     get_timestamps,
     fill_timeskip,
     fill_timeskip_behavior,
+    pre_confocal_timesteps,
     # segmentation.jl
     downsample_unet_input,
     segment_worm!,
@@ -85,5 +86,4 @@ export
     encode_movie,
     write_behavior_video,
     add_text_to_image
-
 end # module

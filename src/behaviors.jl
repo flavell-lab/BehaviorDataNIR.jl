@@ -1,16 +1,17 @@
 """
 Adds body angles to `data_dict` given `param`.
+Can add a `prefix` (default empty string) to all confocal variables.
 """
-function get_body_angles!(data_dict::Dict, param::Dict)
-    vec_to_confocal = vec -> nir_vec_to_confocal(vec, data_dict["confocal_to_nir"], param["max_t"])
+function get_body_angles!(data_dict::Dict, param::Dict; prefix::String="")
+    vec_to_confocal = vec -> nir_vec_to_confocal(vec, data_dict["$(prefix)confocal_to_nir"], data_dict["$(prefix)max_t"])
     s = size(data_dict["x_array"],1)
     m = maximum([length(x) for x in data_dict["segment_end_matrix"]])-1
     data_dict["nir_body_angle"] = zeros(param["max_pt"]-1,s)
     data_dict["nir_body_angle_all"] = zeros(m,s)
     data_dict["nir_body_angle_absolute"] = zeros(m,s)
-    data_dict["body_angle"] = zeros(param["max_pt"]-1,maximum(param["t_range"]))
-    data_dict["body_angle_all"] = zeros(m,maximum(param["t_range"]))
-    data_dict["body_angle_absolute"] = zeros(m,maximum(param["t_range"]))
+    data_dict["$(prefix)body_angle"] = zeros(param["max_pt"]-1,maximum(data_dict["t_range"]))
+    data_dict["$(prefix)body_angle_all"] = zeros(m,maximum(data_dict["t_range"]))
+    data_dict["$(prefix)body_angle_absolute"] = zeros(m,maximum(data_dict["t_range"]))
     for pos in 1:m
         for t in 1:s
             if length(data_dict["segment_end_matrix"][t]) > pos
@@ -32,39 +33,37 @@ function get_body_angles!(data_dict::Dict, param::Dict)
     end
     
     for pos in 1:m
-        data_dict["body_angle_all"][pos,:] .= vec_to_confocal(data_dict["nir_body_angle_all"][pos,:])
-        data_dict["body_angle_absolute"][pos,:] .= vec_to_confocal(data_dict["nir_body_angle_absolute"][pos,:])
+        data_dict["$(prefix)body_angle_all"][pos,:] .= vec_to_confocal(data_dict["nir_body_angle_all"][pos,:])
+        data_dict["$(prefix)body_angle_absolute"][pos,:] .= vec_to_confocal(data_dict["nir_body_angle_absolute"][pos,:])
         
         if pos < param["max_pt"]
             data_dict["nir_body_angle"][pos,:] .= data_dict["nir_body_angle_all"][pos,:]      
             data_dict["nir_body_angle"][pos,:] .= impute_list(data_dict["nir_body_angle"][pos,:])
-            data_dict["body_angle"][pos,:] .= vec_to_confocal(data_dict["nir_body_angle"][pos,:])
-            data_dict["body_angle_absolute"][pos,:] .= vec_to_confocal(data_dict["nir_body_angle_absolute"][pos,:]);
+            data_dict["$(prefix)body_angle"][pos,:] .= vec_to_confocal(data_dict["nir_body_angle"][pos,:])
+            data_dict["$(prefix)body_angle_absolute"][pos,:] .= vec_to_confocal(data_dict["nir_body_angle_absolute"][pos,:]);
         end
     end
 end
 
 """
 Gets angular velocity from `data_dict` and `param`.
+Can add a `prefix` (default empty string) to all confocal variables.
 """
-function get_angular_velocity!(data_dict::Dict, param::Dict)
-    vec_to_confocal = vec -> nir_vec_to_confocal(vec, data_dict["confocal_to_nir"], param["max_t"])
+function get_angular_velocity!(data_dict::Dict, param::Dict; prefix::String="")
+    vec_to_confocal = vec -> nir_vec_to_confocal(vec, data_dict["$(prefix)confocal_to_nir"], data_dict["$(prefix)max_t"])
     data_dict["worm_angle"] = vec_to_confocal(data_dict["nir_worm_angle"])
 
-    turning_angle = impute_list(data_dict["body_angle_absolute"][param["head_pts"][1],:])
-
-    data_dict["worm_head_facing_angle_filtered"] = gstv(turning_angle .- turning_angle[1], param["m_angvel"], param["l_angvel"]);
-    data_dict["angular_velocity"] = zeros(param["max_t"])
-    data_dict["angular_velocity"][2:end-1] = diff_lag(data_dict["worm_head_facing_angle_filtered"], 2)
-    data_dict["angular_velocity"][1] = data_dict["angular_velocity"][2]
-    data_dict["angular_velocity"][end-1] = data_dict["angular_velocity"][end];
+    nir_turning_angle = impute_list(data_dict["nir_body_angle_absolute"][param["head_pts"][1],:])
+    data_dict["nir_angular_velocity"] = savitzky_golay_filter(nir_turning_angle, param["filt_len_angvel"], is_derivative=true, has_inflection=false) .* param["FLIR_FPS"]
+    data_dict["$(prefix)angular_velocity"] = vec_to_confocal(data_dict["nir_angular_velocity"])
 end
 
 """
 Gets velocity, speed, reversal, and related variables from `data_dict` and `param`.
+Can add a `prefix` (default empty string) to all confocal variables.
 """
-function get_velocity!(data_dict::Dict, param::Dict)
-    vec_to_confocal = vec -> nir_vec_to_confocal(vec, data_dict["confocal_to_nir"], param["max_t"])
+function get_velocity!(data_dict::Dict, param::Dict; prefix::String="")
+    vec_to_confocal = vec -> nir_vec_to_confocal(vec, data_dict["$(prefix)confocal_to_nir"], data_dict["$(prefix)max_t"])
     data_dict["filt_xmed"] = gstv(Float64.(data_dict["x_med"]), param["v_stage_m_filt"], param["v_stage_λ_filt"])
     data_dict["filt_ymed"] = gstv(Float64.(data_dict["y_med"]), param["v_stage_m_filt"], param["v_stage_λ_filt"]);
 
@@ -74,36 +73,38 @@ function get_velocity!(data_dict::Dict, param::Dict)
     append!(Δy, diff(data_dict["filt_ymed"]))
     Δt = 1.0 / param["FLIR_FPS"]
     data_dict["nir_mov_vec_stage"] = make_vec(Δx, Δy)
-    data_dict["mov_vec_stage"] = vec_to_confocal(data_dict["nir_mov_vec_stage"])
+    data_dict["$(prefix)mov_vec_stage"] = vec_to_confocal(data_dict["nir_mov_vec_stage"])
     data_dict["nir_mov_angle_stage"] = impute_list(vec_to_angle(data_dict["nir_mov_vec_stage"]))
-    data_dict["mov_angle_stage"] = vec_to_confocal(data_dict["nir_mov_angle_stage"])
+    data_dict["$(prefix)mov_angle_stage"] = vec_to_confocal(data_dict["nir_mov_angle_stage"])
     data_dict["nir_speed_stage"] = speed(Δx, Δy, Δt)
-    data_dict["speed_stage"] = vec_to_confocal(data_dict["nir_speed_stage"])
+    data_dict["$(prefix)speed_stage"] = vec_to_confocal(data_dict["nir_speed_stage"])
     data_dict["nir_velocity_stage"] = data_dict["nir_speed_stage"] .* cos.(data_dict["nir_mov_angle_stage"] .- data_dict["pm_angle"])
-    data_dict["velocity_stage"] = vec_to_confocal(data_dict["nir_velocity_stage"])
-    data_dict["reversal_events"], data_dict["all_rev"] = get_reversal_events(param, data_dict["velocity_stage"], param["t_range"]);
-    data_dict["rev_times"] = compute_reversal_times(data_dict["all_rev"], maximum(param["t_range"]));
+    data_dict["$(prefix)velocity_stage"] = vec_to_confocal(data_dict["nir_velocity_stage"])
+    data_dict["$(prefix)reversal_events"], data_dict["$(prefix)all_rev"] = get_reversal_events(param, data_dict["$(prefix)velocity_stage"], data_dict["$(prefix)t_range"]);
+    data_dict["$(prefix)rev_times"] = compute_reversal_times(data_dict["$(prefix)all_rev"], maximum(data_dict["$(prefix)t_range"]));
 end
 
 """
 Gets curvature, head angle, and related variables from `data_dict` and `param`.
+Can add a `prefix` (default empty string) to all confocal variables.
 """
-function get_curvature_variables!(data_dict::Dict, param::Dict)
-    vec_to_confocal = vec -> nir_vec_to_confocal(vec, data_dict["confocal_to_nir"], param["max_t"])
-    data_dict["worm_curvature"] = get_tot_worm_curvature(data_dict["body_angle"], size(data_dict["body_angle"],1));
-    data_dict["ventral_worm_curvature"] = get_tot_worm_curvature(data_dict["body_angle"], size(data_dict["body_angle"],1), directional=true);
+function get_curvature_variables!(data_dict::Dict, param::Dict; prefix::String="")
+    vec_to_confocal = vec -> nir_vec_to_confocal(vec, data_dict["$(prefix)confocal_to_nir"], data_dict["$(prefix)max_t"])
+    data_dict["$(prefix)worm_curvature"] = get_tot_worm_curvature(data_dict["$(prefix)body_angle"], size(data_dict["$(prefix)body_angle"],1));
+    data_dict["$(prefix)ventral_worm_curvature"] = get_tot_worm_curvature(data_dict["$(prefix)body_angle"], size(data_dict["$(prefix)body_angle"],1), directional=true);
     data_dict["nir_head_angle"] = -get_worm_body_angle(data_dict["x_array"], data_dict["y_array"], data_dict["segment_end_matrix"], param["head_pts"])
     data_dict["nir_nose_angle"] = -get_worm_body_angle(data_dict["x_array"], data_dict["y_array"], data_dict["segment_end_matrix"], param["nose_pts"])
 
-    data_dict["head_angle"] = vec_to_confocal(data_dict["nir_head_angle"])
-    data_dict["nose_angle"] = vec_to_confocal(data_dict["nir_nose_angle"]);
+    data_dict["$(prefix)head_angle"] = vec_to_confocal(data_dict["nir_head_angle"])
+    data_dict["$(prefix)nose_angle"] = vec_to_confocal(data_dict["nir_nose_angle"]);
 end
 
 """
 Gets self intersection variables from `data_dict` and `param`.
+Can add a `prefix` (default empty string) to all confocal variables.
 """
-function get_self_intersection!(data_dict::Dict, param::Dict)
-    vec_to_confocal = vec -> nir_vec_to_confocal(vec, data_dict["confocal_to_nir"], param["max_t"])
+function get_self_intersection!(data_dict::Dict, param::Dict; prefix::String="")
+    vec_to_confocal = vec -> nir_vec_to_confocal(vec, data_dict["$(prefix)confocal_to_nir"], data_dict["$(prefix)max_t"])
     data_dict["nir_self_intersect_ratio"] = Vector{Float64}()
     data_dict["nir_self_intersect_ratio_head"] = Vector{Float64}()
     max_med_len = param["segment_len"] * param["max_pt"]
@@ -118,8 +119,8 @@ function get_self_intersection!(data_dict::Dict, param::Dict)
     end
     data_dict["nir_self_intersect_ratio"] = impute_list(data_dict["nir_self_intersect_ratio"])
     data_dict["nir_self_intersect_ratio_head"] = impute_list(data_dict["nir_self_intersect_ratio_head"]);
-    data_dict["self_intersect_ratio"] = vec_to_confocal(data_dict["nir_self_intersect_ratio"])
-    data_dict["self_intersect_ratio_head"] = vec_to_confocal(data_dict["nir_self_intersect_ratio_head"]);
+    data_dict["$(prefix)self_intersect_ratio"] = vec_to_confocal(data_dict["nir_self_intersect_ratio"])
+    data_dict["$(prefix)self_intersect_ratio_head"] = vec_to_confocal(data_dict["nir_self_intersect_ratio_head"]);
 end
 
 """
@@ -131,27 +132,56 @@ function merge_nir_data!(combined_data_dict::Dict, data_dict::Dict, data_dict_2:
     combined_data_dict["confocal_to_nir_2"] = data_dict_2["confocal_to_nir"]
     combined_data_dict["nir_to_confocal_1"] = data_dict["nir_to_confocal"]
     combined_data_dict["nir_to_confocal_2"] = data_dict_2["nir_to_confocal"]
+
+    combined_data_dict["pre_confocal_to_nir_1"] = data_dict["pre_confocal_to_nir"]
+    combined_data_dict["pre_confocal_to_nir_2"] = data_dict_2["pre_confocal_to_nir"]
+    combined_data_dict["pre_nir_to_confocal_1"] = data_dict["pre_nir_to_confocal"]
+    combined_data_dict["pre_nir_to_confocal_2"] = data_dict_2["pre_nir_to_confocal"]
+
+    combined_data_dict["max_t_1"] = data_dict["max_t"]
+    combined_data_dict["max_t_2"] = data_dict_2["max_t"]
+    combined_data_dict["t_range_1"] = data_dict["t_range"]
+    combined_data_dict["t_range_2"] = data_dict_2["t_range"]
+    combined_data_dict["pre_max_t_1"] = data_dict["pre_max_t"]
+    combined_data_dict["pre_max_t_2"] = data_dict_2["pre_max_t"]
+    combined_data_dict["pre_t_range_1"] = data_dict["pre_t_range"]
+    combined_data_dict["pre_t_range_2"] = data_dict_2["pre_t_range"]
+    combined_data_dict["max_t"] = combined_data_dict["max_t_1"] + combined_data_dict["max_t_2"]
+
+
     combined_data_dict["max_t_nir_1"] = data_dict["max_t_nir"]
     combined_data_dict["max_t_nir_2"] = data_dict_2["max_t_nir"]
 
 
     for var in param["concat_vars"]
         if length(size(data_dict[var])) == 1
-            combined_data_dict[var] = zeros(data_dict["max_t_all"])
+            combined_data_dict[var] = zeros(combined_data_dict["max_t"])
             combined_data_dict[var][1:length(data_dict[var])] .= data_dict[var]
             combined_data_dict[var][length(data_dict[var])+1:end] .= data_dict_2[var]
         elseif length(size(data_dict[var])) == 2
             max_size = max(size(data_dict[var],1), size(data_dict_2[var],1))
-            combined_data_dict[var] = zeros(max_size, data_dict["max_t_all"])
+            combined_data_dict[var] = zeros(max_size, combined_data_dict["max_t"])
             combined_data_dict[var][1:size(data_dict[var],1),1:size(data_dict[var],2)] .= data_dict[var][:,:]
             combined_data_dict[var][1:size(data_dict_2[var],1),size(data_dict[var],2)+1:end] .= data_dict_2[var][:,:]
         else
             throw(ErrorException("number of dimensions must be 1 or 2"))
         end
+        if "pre_$(var)" in keys(data_dict)
+            combined_data_dict["pre_$(var)_1"] = data_dict["pre_$(var)"]
+        end
+        if "pre_$(var)" in keys(data_dict_2)
+            combined_data_dict["pre_$(var)_2"] = data_dict_2["pre_$(var)"]
+        end
     end
     for var in param["t_concat_vars"]
         combined_data_dict[var] = deepcopy(data_dict[var])
-        append!(combined_data_dict[var], param["max_t"] .+ data_dict_2[var])
+        append!(combined_data_dict[var], combined_data_dict["max_t_1"] .+ data_dict_2[var])
+        if "pre_$(var)" in keys(data_dict)
+            combined_data_dict["pre_$(var)_1"] = data_dict["pre_$(var)"]
+        end
+        if "pre_$(var)" in keys(data_dict_2)
+            combined_data_dict["pre_$(var)_2"] = data_dict_2["pre_$(var)"]
+        end
     end
     for var in param["nir_concat_vars"]
         if length(size(data_dict[var])) == 1
@@ -172,23 +202,35 @@ function merge_nir_data!(combined_data_dict::Dict, data_dict::Dict, data_dict_2:
 end
 
 """
-Import pumping data into a combined dataset from a csv file.
+Import pumping data into a combined dataset from csv files.
+Can add a `prefix` (default empty string) to all confocal variables.
+If `prefix` is added, will output a list of pumping for each dataset rather than merging them together.
 """
-function import_pumping!(combined_data_dict::Dict, path_pumping)
-    vec_to_confocal = vec -> nir_vec_to_confocal(vec, data_dict["confocal_to_nir"], param["max_t"])
-    combined_data_dict["pumping_nir"] = Float64[]
-    combined_data_dict["pumping_raw"] = Float64[]
-    combined_data_dict["pumping"] = Float64[]
+function import_pumping!(combined_data_dict::Dict, paths_pumping; prefix::String="")
+    combined_data_dict["nir_pumping_raw"] = Float64[]
+    combined_data_dict["nir_pumping"] = Float64[]
+    combined_data_dict["$(prefix)pumping_raw"] = Float64[]
+    combined_data_dict["$(prefix)pumping"] = Float64[]
 
-    for (d, file) in enumerate(path_pumping)
+    dataset_combine_fn! = isempty(prefix) ? append! : push!
+
+    for (d, file) in enumerate(paths_pumping)
         pumping = readdlm(file, ',', Any, '\n')
-        pumping_nir = param["FLIR_FPS"] .* [(t in floor.(Int64.(pumping[2:end,2])./50)) ? 1 : 0 for t in 1:combined_data_dict["max_t_nir_$d"]]
-        append!(combined_data_dict["pumping_nir"], pumping_nir)
-        pumping_raw = nir_vec_to_confocal(pumping_nir, combined_data_dict["confocal_to_nir_$d"], length(combined_data_dict["confocal_to_nir_$d"]))
-        if length(path_pumping == 1) 
-            append!(pumping_raw, nir_vec_to_confocal(pumping_nir, combined_data_dict["confocal_to_nir_2"], length(combined_data_dict["confocal_to_nir_2"])))
+        pumping_nir_raw = param["FLIR_FPS"] .* [(t in floor.(Int64.(pumping[2:end,2])./50)) ? 1 : 0 for t in 1:combined_data_dict["max_t_nir_$d"]]
+        dataset_combine_fn!(combined_data_dict["nir_pumping_raw"], pumping_nir_raw)
+        pumping_raw = nir_vec_to_confocal(pumping_nir_raw, combined_data_dict["$(prefix)confocal_to_nir_$d"], length(combined_data_dict["$(prefix)confocal_to_nir_$d"]))
+        
+        pumping_nir_filt = savitzky_golay_filter(pumping_nir_raw, param["filt_len_pumping"], is_derivative=false, has_inflection=false)
+        pumping_conf = nir_vec_to_confocal(pumping_nir_filt, combined_data_dict["$(prefix)confocal_to_nir_$d"], length(combined_data_dict["$(prefix)confocal_to_nir_$d"]))
+        dataset_combine_fn!(combined_data_dict["nir_pumping"], pumping_nir_filt)
+        
+        pumping_conf = nir_vec_to_confocal(pumping_nir_filt, combined_data_dict["$(prefix)confocal_to_nir_$d"], length(combined_data_dict["$(prefix)confocal_to_nir_$d"]))
+        if length(paths_pumping) == 1
+            dataset_combine_fn!(pumping_raw, nir_vec_to_confocal(pumping_nir_raw, combined_data_dict["$(prefix)confocal_to_nir_2"], length(combined_data_dict["$(prefix)confocal_to_nir_2"])))
+            dataset_combine_fn!(pumping_conf, nir_vec_to_confocal(pumping_nir_filt, combined_data_dict["$(prefix)confocal_to_nir_2"], length(combined_data_dict["$(prefix)confocal_to_nir_2"])))
         end
-        append!(combined_data_dict["pumping_raw"], pumping_raw)
-        append!(combined_data_dict["pumping"], gstv(pumping_raw, 10, 0.2))
+        dataset_combine_fn!(combined_data_dict["$(prefix)pumping_raw"], pumping_raw)
+        dataset_combine_fn!(combined_data_dict["$(prefix)pumping"], pumping_conf)
     end
+    return combined_data_dict["$(prefix)pumping"]
 end

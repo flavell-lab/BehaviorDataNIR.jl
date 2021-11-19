@@ -266,3 +266,21 @@ function fill_timeskip_behavior(behavior, timestamps; min_timeskip_length=5, tim
     new_timestamps, new_vec = fill_timeskip(vec, timestamps, min_timeskip_length=min_timeskip_length, timeskip_step=timeskip_step, fill_val=fill_val)
     return new_timestamps, new_vec[1,:]
 end
+
+"""
+Computes confocal timesteps backwards in time from the beginning of the confocal recording.
+"""
+function pre_confocal_timesteps(data_dict::Dict, param::Dict)
+    step = data_dict["avg_timestep"]*param["FLIR_FPS"]
+    idx = findall(x->x==1, data_dict["nir_to_confocal"])[1]-1
+    pre_nir_to_conf = zeros(idx)
+    n_prev = Int(floor(idx/step))
+    pre_conf_to_nir = []
+    offset = idx - Int(floor(step * n_prev))
+    for t=1:n_prev
+        rng = Int(floor((t-1)*step+1+offset)):Int(floor(t*step+offset))
+        pre_nir_to_conf[rng] .= t
+        push!(pre_conf_to_nir, collect(rng))
+    end
+    return pre_nir_to_conf, pre_conf_to_nir
+end
