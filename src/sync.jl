@@ -249,6 +249,8 @@ function get_timing_info!(data_dict::Dict, param::Dict, path_h5::String, h5_conf
 
     data_dict["pre_nir_to_confocal"], data_dict["pre_confocal_to_nir"] = pre_confocal_timesteps(data_dict, param)
     data_dict["max_t"] = param["max_t"]
+    data_dict["t_range"] = param["t_range"]
+
     data_dict["pre_max_t"] = length(data_dict["pre_confocal_to_nir"]);
     data_dict["pre_t_range"] = collect(1:data_dict["pre_max_t"]);
 
