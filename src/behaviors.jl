@@ -6,12 +6,13 @@ function get_body_angles!(data_dict::Dict, param::Dict; prefix::String="")
     vec_to_confocal = vec -> nir_vec_to_confocal(vec, data_dict["$(prefix)confocal_to_nir"], data_dict["$(prefix)max_t"])
     s = size(data_dict["x_array"],1)
     m = maximum([length(x) for x in data_dict["segment_end_matrix"]])-1
+    conf_len = length(data_dict["$(prefix)confocal_to_nir"])
     data_dict["nir_body_angle"] = zeros(param["max_pt"]-1,s)
     data_dict["nir_body_angle_all"] = zeros(m,s)
     data_dict["nir_body_angle_absolute"] = zeros(m,s)
-    data_dict["$(prefix)body_angle"] = zeros(param["max_pt"]-1,maximum(data_dict["t_range"]))
-    data_dict["$(prefix)body_angle_all"] = zeros(m,maximum(data_dict["t_range"]))
-    data_dict["$(prefix)body_angle_absolute"] = zeros(m,maximum(data_dict["t_range"]))
+    data_dict["$(prefix)body_angle"] = zeros(param["max_pt"]-1,conf_len)
+    data_dict["$(prefix)body_angle_all"] = zeros(m,conf_len)
+    data_dict["$(prefix)body_angle_absolute"] = zeros(m,conf_len)
     for pos in 1:m
         for t in 1:s
             if length(data_dict["segment_end_matrix"][t]) > pos
