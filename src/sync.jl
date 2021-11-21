@@ -225,6 +225,46 @@ function get_timestamps(path_h5)
 end
 
 """
+Initializes all timing and syncing variables into `data_dict` given `path_h5` and the `h5_confocal_time_lag`
+"""
+function get_timing_info!(data_dict::Dict, path_h5::String, h5_confocal_time_lag::Integer)
+    data_dict["confocal_to_nir"], data_dict["nir_to_confocal"], data_dict["timing_stack"], data_dict["timing_nir"] = sync_timing(path_h5);
+
+    if h5_confocal_time_lag == 0
+        data_dict["confocal_to_nir"] = data_dict["confocal_to_nir"][1:param["max_t"]]
+        data_dict["timing_stack"] = data_dict["timing_stack"][1:param["max_t"]]
+        data_dict["nir_to_confocal"] = [(x > param["max_t"]) ? 0.0 : x for x in data_dict["nir_to_confocal"]]
+    else
+        data_dict["confocal_to_nir"] = data_dict["confocal_to_nir"][h5_confocal_time_lag+2:end]
+        data_dict["timing_stack"] = data_dict["timing_stack"][h5_confocal_time_lag+2:end]
+        data_dict["nir_to_confocal"] = [(x < h5_confocal_time_lag + 2) ? 0.0 : x - (h5_confocal_time_lag + 1) for x in data_dict["nir_to_confocal"]]
+    end
+    data_dict["nir_timestamps"] = get_timestamps(path_h5)
+    vec_to_confocal = vec -> nir_vec_to_confocal(vec, data_dict["confocal_to_nir"], param["max_t"])
+
+    data_dict["timestamps"] = vec_to_confocal(data_dict["nir_timestamps"]);
+    data_dict["max_t_nir"] = length(data_dict["nir_to_confocal"])
+
+    data_dict["avg_timestep"] = (data_dict["timestamps"][end] - data_dict["timestamps"][1]) / length(data_dict["timestamps"])
+
+    data_dict["pre_nir_to_confocal"], data_dict["pre_confocal_to_nir"] = pre_confocal_timesteps(data_dict, param)
+    data_dict["max_t"] = param["max_t"]
+    data_dict["pre_max_t"] = length(data_dict["pre_confocal_to_nir"]);
+    data_dict["pre_t_range"] = collect(1:data_dict["pre_max_t"]);
+
+
+    stim = h5read(path_h5, "daqmx_ai")[:,3]
+    timing_nir = BehaviorDataNIR.detect_nir_timing(path_h5)
+    thresh = max(maximum(stim)/2, 0.1)
+    stim_to_nir = findall(x->x>thresh, stim[round.(Int, dropdims(mean(timing_nir, dims=2), dims=2))])
+    prev_len = 20
+    stim_begin_nir = [t for t in stim_to_nir if !any([t-i in stim_to_nir for i=1:prev_len])]
+    stim_to_confocal = [maximum(data_dict["nir_to_confocal"][1:stim_begin_nir[i]]) for i=1:length(stim_begin_nir)]
+    data_dict["stim_begin_nir"] = stim_begin_nir
+    data_dict["stim_begin_confocal"] = stim_to_confocal;
+end
+
+"""
 Fills in timeskips with multiple 0 datapoints for easier visualization.
 
 # Arguments:

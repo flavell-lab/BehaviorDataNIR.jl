@@ -64,6 +64,7 @@ export
     unlag_vec,
     nir_to_confocal_t,
     get_timestamps,
+    get_timing_info!,
     fill_timeskip,
     fill_timeskip_behavior,
     pre_confocal_timesteps,
