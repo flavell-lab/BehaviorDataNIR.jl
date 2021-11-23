@@ -2,7 +2,7 @@ module BehaviorDataNIR
 
 using Impute, LinearAlgebra, ProgressMeter, HDF5, Images, Statistics,
     FlavellBase, UNet2D, SegmentationStats, StatsBase, TotalVariation,
-    Combinatorics, Interpolations, PyCall, Optim, VideoIO, Luxor
+    Combinatorics, Interpolations, PyCall, Optim, VideoIO, Luxor, DelimitedFiles
 
 include("init.jl")
 include("analysis.jl")
