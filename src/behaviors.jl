@@ -210,20 +210,20 @@ If `prefix` is added, will output a list of pumping for each dataset rather than
 function import_pumping!(combined_data_dict::Dict, param::Dict, paths_pumping; prefix::String="")
     combined_data_dict["nir_pumping_raw"] = Float64[]
     combined_data_dict["nir_pumping"] = Float64[]
-    combined_data_dict["$(prefix)pumping_raw"] = Float64[]
-    combined_data_dict["$(prefix)pumping"] = Float64[]
+    combined_data_dict["$(prefix)pumping_raw"] = []
+    combined_data_dict["$(prefix)pumping"] = []
 
     dataset_combine_fn! = isempty(prefix) ? append! : push!
 
     for (d, file) in enumerate(paths_pumping)
         pumping = readdlm(file, ',', Any, '\n')
         pumping_nir_raw = param["FLIR_FPS"] .* [(t in floor.(Int64.(pumping[2:end,2])./50)) ? 1 : 0 for t in 1:combined_data_dict["max_t_nir_$d"]]
-        dataset_combine_fn!(combined_data_dict["nir_pumping_raw"], pumping_nir_raw)
+        append!(combined_data_dict["nir_pumping_raw"], pumping_nir_raw)
         pumping_raw = nir_vec_to_confocal(pumping_nir_raw, combined_data_dict["$(prefix)confocal_to_nir_$d"], length(combined_data_dict["$(prefix)confocal_to_nir_$d"]))
         
         pumping_nir_filt = savitzky_golay_filter(pumping_nir_raw, param["filt_len_pumping"], is_derivative=false, has_inflection=false)
         pumping_conf = nir_vec_to_confocal(pumping_nir_filt, combined_data_dict["$(prefix)confocal_to_nir_$d"], length(combined_data_dict["$(prefix)confocal_to_nir_$d"]))
-        dataset_combine_fn!(combined_data_dict["nir_pumping"], pumping_nir_filt)
+        append!(combined_data_dict["nir_pumping"], pumping_nir_filt)
         
         pumping_conf = nir_vec_to_confocal(pumping_nir_filt, combined_data_dict["$(prefix)confocal_to_nir_$d"], length(combined_data_dict["$(prefix)confocal_to_nir_$d"]))
         if length(paths_pumping) == 1
@@ -233,5 +233,13 @@ function import_pumping!(combined_data_dict::Dict, param::Dict, paths_pumping; p
         dataset_combine_fn!(combined_data_dict["$(prefix)pumping_raw"], pumping_raw)
         dataset_combine_fn!(combined_data_dict["$(prefix)pumping"], pumping_conf)
     end
+
+    if !isempty(prefix)
+        combined_data_dict["$(prefix)_pumping_raw_1"], combined_data_dict["$(prefix)_pumping_raw_2"] = combined_data_dict["$(prefix)_pumping_raw"]
+        delete!(combined_data_dict, "$(prefix)_pumping_raw")
+        combined_data_dict["$(prefix)_pumping_1"], combined_data_dict["$(prefix)_pumping_2"] = combined_data_dict["$(prefix)_pumping"]
+        delete!(combined_data_dict, "$(prefix)_pumping")
+    end
+
     return combined_data_dict["$(prefix)pumping"]
 end
