@@ -235,10 +235,10 @@ function import_pumping!(combined_data_dict::Dict, param::Dict, paths_pumping; p
     end
 
     if !isempty(prefix)
-        combined_data_dict["$(prefix)_pumping_raw_1"], combined_data_dict["$(prefix)_pumping_raw_2"] = combined_data_dict["$(prefix)_pumping_raw"]
+        combined_data_dict["$(prefix)pumping_raw_1"], combined_data_dict["$(prefix)pumping_raw_2"] = combined_data_dict["$(prefix)pumping_raw"]
         delete!(combined_data_dict, "$(prefix)_pumping_raw")
-        combined_data_dict["$(prefix)_pumping_1"], combined_data_dict["$(prefix)_pumping_2"] = combined_data_dict["$(prefix)_pumping"]
-        delete!(combined_data_dict, "$(prefix)_pumping")
+        combined_data_dict["$(prefix)pumping_1"], combined_data_dict["$(prefix)pumping_2"] = combined_data_dict["$(prefix)pumping"]
+        delete!(combined_data_dict, "$(prefix)pumping")
     end
 
     return combined_data_dict["$(prefix)pumping"]
