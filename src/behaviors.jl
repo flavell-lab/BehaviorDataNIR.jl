@@ -203,11 +203,11 @@ function merge_nir_data!(combined_data_dict::Dict, data_dict::Dict, data_dict_2:
 end
 
 """
-Import pumping data into a combined dataset from csv files.
+Import pumping data into a combined dataset given `param` from csv files.
 Can add a `prefix` (default empty string) to all confocal variables.
 If `prefix` is added, will output a list of pumping for each dataset rather than merging them together.
 """
-function import_pumping!(combined_data_dict::Dict, paths_pumping; prefix::String="")
+function import_pumping!(combined_data_dict::Dict, param::Dict, paths_pumping; prefix::String="")
     combined_data_dict["nir_pumping_raw"] = Float64[]
     combined_data_dict["nir_pumping"] = Float64[]
     combined_data_dict["$(prefix)pumping_raw"] = Float64[]
