@@ -51,7 +51,7 @@ Can add a `prefix` (default empty string) to all confocal variables.
 """
 function get_angular_velocity!(data_dict::Dict, param::Dict; prefix::String="")
     vec_to_confocal = vec -> nir_vec_to_confocal(vec, data_dict["$(prefix)confocal_to_nir"], data_dict["$(prefix)max_t"])
-    data_dict["worm_angle"] = vec_to_confocal(data_dict["nir_worm_angle"])
+    data_dict["$(prefix)worm_angle"] = vec_to_confocal(data_dict["nir_worm_angle"])
 
     nir_turning_angle = impute_list(data_dict["nir_body_angle_absolute"][param["head_pts"][1],:])
     data_dict["nir_angular_velocity"] = savitzky_golay_filter(nir_turning_angle, param["filt_len_angvel"], is_derivative=true, has_inflection=false) .* param["FLIR_FPS"]
