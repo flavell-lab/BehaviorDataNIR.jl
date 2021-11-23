@@ -240,6 +240,4 @@ function import_pumping!(combined_data_dict::Dict, param::Dict, paths_pumping; p
         combined_data_dict["$(prefix)pumping_1"], combined_data_dict["$(prefix)pumping_2"] = combined_data_dict["$(prefix)pumping"]
         delete!(combined_data_dict, "$(prefix)pumping")
     end
-
-    return combined_data_dict["$(prefix)pumping"]
 end
