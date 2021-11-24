@@ -226,12 +226,14 @@ function import_pumping!(combined_data_dict::Dict, param::Dict, paths_pumping; p
         append!(combined_data_dict["nir_pumping"], pumping_nir_filt)
         
         pumping_conf = nir_vec_to_confocal(pumping_nir_filt, combined_data_dict["$(prefix)confocal_to_nir_$d"], length(combined_data_dict["$(prefix)confocal_to_nir_$d"]))
-        if length(paths_pumping) == 1
-            dataset_combine_fn!(pumping_raw, nir_vec_to_confocal(pumping_nir_raw, combined_data_dict["$(prefix)confocal_to_nir_2"], length(combined_data_dict["$(prefix)confocal_to_nir_2"])))
-            dataset_combine_fn!(pumping_conf, nir_vec_to_confocal(pumping_nir_filt, combined_data_dict["$(prefix)confocal_to_nir_2"], length(combined_data_dict["$(prefix)confocal_to_nir_2"])))
-        end
+
         dataset_combine_fn!(combined_data_dict["$(prefix)pumping_raw"], pumping_raw)
         dataset_combine_fn!(combined_data_dict["$(prefix)pumping"], pumping_conf)
+
+        if length(paths_pumping) == 1
+            dataset_combine_fn!(combined_data_dict["$(prefix)pumping_raw"], nir_vec_to_confocal(pumping_nir_raw, combined_data_dict["$(prefix)confocal_to_nir_2"], length(combined_data_dict["$(prefix)confocal_to_nir_2"])))
+            dataset_combine_fn!(combined_data_dict["$(prefix)pumping"], nir_vec_to_confocal(pumping_nir_filt, combined_data_dict["$(prefix)confocal_to_nir_2"], length(combined_data_dict["$(prefix)confocal_to_nir_2"])))
+        end
     end
 
     if !isempty(prefix)
