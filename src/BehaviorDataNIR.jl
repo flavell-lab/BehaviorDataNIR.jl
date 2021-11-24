@@ -18,6 +18,7 @@ include("video.jl")
 
 export 
     # behaviors.jl
+    interpolate_splines!,
     get_body_angles!,
     get_angular_velocity!,
     get_velocity!,

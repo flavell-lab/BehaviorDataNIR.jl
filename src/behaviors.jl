@@ -1,4 +1,18 @@
 """
+Interpolates worm splines to time points where the spline computation crashed.
+"""
+function interpolate_splines!(data_dict)
+    bad_timepts = [t for t=1:data_dict["max_t_nir"] if sum(abs.(data_dict["x_array"][t,:])) == 0 && sum(abs.(data_dict["y_array"][t,:])) == 0]
+    data_dict["x_array"][bad_timepts,:] .= NaN
+    data_dict["y_array"][bad_timepts,:] .= NaN
+    for idx=1:size(data_dict["x_array"],2)
+        data_dict["x_array"][:,idx] .= impute_list(data_dict["x_array"][:,idx])
+        data_dict["y_array"][:,idx] .= impute_list(data_dict["y_array"][:,idx])
+    end
+end
+
+
+"""
 Adds body angles to `data_dict` given `param`.
 Can add a `prefix` (default empty string) to all confocal variables.
 """
