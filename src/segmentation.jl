@@ -8,7 +8,7 @@ end
 function largest_segment!(img_bin, img_label)
     img_label .= 0
     label_2d!(img_bin, img_label)
-    list_seg = get_segmented_instance(img_label, Matrix(img_bin), Matrix(img_bin))
+    list_seg = get_segmented_instance(img_label, img_bin, img_bin)
     largest_obj_id = sort(list_seg, by=x->x.area, rev=true)[1].obj_id
     
     img_label .== largest_obj_id
