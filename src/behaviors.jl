@@ -107,8 +107,8 @@ function get_curvature_variables!(data_dict::Dict, param::Dict; prefix::String="
     vec_to_confocal = vec -> nir_vec_to_confocal(vec, data_dict["$(prefix)confocal_to_nir"], data_dict["$(prefix)max_t"])
     data_dict["$(prefix)worm_curvature"] = get_tot_worm_curvature(data_dict["$(prefix)body_angle"], size(data_dict["$(prefix)body_angle"],1));
     data_dict["$(prefix)ventral_worm_curvature"] = get_tot_worm_curvature(data_dict["$(prefix)body_angle"], size(data_dict["$(prefix)body_angle"],1), directional=true);
-    data_dict["nir_head_angle"] = -get_worm_body_angle(data_dict["x_array"], data_dict["y_array"], data_dict["segment_end_matrix"], param["head_pts"])
-    data_dict["nir_nose_angle"] = -get_worm_body_angle(data_dict["x_array"], data_dict["y_array"], data_dict["segment_end_matrix"], param["nose_pts"])
+    data_dict["nir_head_angle"] = -impute_list(get_worm_body_angle(data_dict["x_array"], data_dict["y_array"], data_dict["segment_end_matrix"], param["head_pts"]))
+    data_dict["nir_nose_angle"] = -impute_list(get_worm_body_angle(data_dict["x_array"], data_dict["y_array"], data_dict["segment_end_matrix"], param["nose_pts"]))
 
     data_dict["$(prefix)head_angle"] = vec_to_confocal(data_dict["nir_head_angle"])
     data_dict["$(prefix)nose_angle"] = vec_to_confocal(data_dict["nir_nose_angle"]);
