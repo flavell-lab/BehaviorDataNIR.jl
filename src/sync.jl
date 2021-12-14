@@ -70,11 +70,11 @@ function detect_nir_timing(path_h5)
     detect_nir_timing(di_nir, img_id, q_iter_save, n_img_nir)
 end
 
-function detect_confocal_timing(ai_laser)
-    ai_laser_bin = Int16.(ai_laser .> mean(ai_laser)) # binarize laser analog signal
+function detect_confocal_timing(di_laser)
+    di_laser_bin = Int16.(di_laser .> mean(di_laser)) # binarize laser analog signal
 
-    list_confocal_on = findall(diff(ai_laser_bin) .== 1) .+ 1
-    list_confocal_off = findall(diff(ai_laser_bin) .== -1) .+ 1
+    list_confocal_on = findall(diff(di_laser_bin) .== 1) .+ 1
+    list_confocal_off = findall(diff(di_laser_bin) .== -1) .+ 1
 
     list_stack_start = list_confocal_on[findall(diff(list_confocal_on) .> 150) .+ 1]
     prepend!(list_stack_start, list_confocal_on[1])
@@ -88,17 +88,17 @@ function detect_confocal_timing(ai_laser)
     list_stack_start, list_stack_stop
 end
 
-function filter_ai_laser(ai_laser)
-    trg_zstack_only = Float64.(ai_laser)
-    trg_state = zeros(Float64, length(ai_laser))
+function filter_di_laser(di_laser)
+    trg_zstack_only = Float64.(di_laser)
+    trg_state = zeros(Float64, length(di_laser))
 
-    n_y = length(ai_laser)
+    n_y = length(di_laser)
     n_kernel = 100
     @simd for i = 1:n_y
     start = max(1, i - n_kernel)
     stop = min(n_y, i + n_kernel)
 
-    trg_state[i] = maximum(ai_laser[start:stop])
+    trg_state[i] = maximum(di_laser[start:stop])
     end
 
     Δtrg_state = diff(trg_state)    
@@ -113,8 +113,8 @@ function filter_ai_laser(ai_laser)
     trg_zstack_only
 end
 
-function sync_timing(di_nir, ai_laser, img_id, q_iter_save, n_img_nir)
-    timing_stack = hcat(detect_confocal_timing(ai_laser)...)
+function sync_timing(di_nir, di_laser, img_id, q_iter_save, n_img_nir)
+    timing_stack = hcat(detect_confocal_timing(di_laser)...)
     timing_nir = detect_nir_timing(di_nir, img_id, q_iter_save, n_img_nir)
 
     if timing_stack[1,1] > timing_stack[1,2]
@@ -150,7 +150,7 @@ function sync_timing(path_h5)
         n_img_nir, daqmx_ai, daqmx_di, img_metadata
     end
 
-    ai_laser = filter_ai_laser(daqmx_ai[:,1])
+    di_laser = filter_di_laser(daqmx_di[:,1])
     ai_piezo = daqmx_ai[:,2]
     ai_stim = daqmx_ai[:,3]
     di_confocal = Float32.(daqmx_di[:,1])
@@ -159,7 +159,7 @@ function sync_timing(path_h5)
     img_id = img_metadata["img_id"]
     q_iter_save = img_metadata["q_iter_save"]
     
-    sync_timing(di_nir, ai_laser, img_id, q_iter_save, n_img_nir)
+    sync_timing(di_nir, di_laser, img_id, q_iter_save, n_img_nir)
 end
 
 function sync_stim(stim, timing_stack, timing_nir)
