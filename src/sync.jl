@@ -89,16 +89,18 @@ function detect_confocal_timing(ai_laser)
 end
 
 function filter_ai_laser(ai_laser, di_camera)
-    ai_laser_zstack_only = Float64.(ai_laser)
-    trg_state = zeros(Float64, length(ai_laser))
+    n_ai, n_di = length(ai_laser), length(di_camera)
+    n = min(n_ai, n_di)
+    ai_laser_zstack_only = Float64.(ai_laser[1:n])
+    trg_state = zeros(Float64, n)
 
-    n_y = length(di_camera)
+    n_y = n
     n_kernel = 100
     @simd for i = 1:n_y
-    start = max(1, i - n_kernel)
-    stop = min(n_y, i + n_kernel)
+        start = max(1, i - n_kernel)
+        stop = min(n_y, i + n_kernel)
 
-    trg_state[i] = maximum(di_camera[start:stop])
+        trg_state[i] = maximum(di_camera[start:stop])
     end
 
     Δtrg_state = diff(trg_state)    
