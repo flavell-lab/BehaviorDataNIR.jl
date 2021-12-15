@@ -118,24 +118,18 @@ end
 Gets self intersection variables from `data_dict` and `param`.
 Can add a `prefix` (default empty string) to all confocal variables.
 """
-function get_self_intersection!(data_dict::Dict, param::Dict; prefix::String="")
+function get_nose_curling!(data_dict::Dict, param::Dict; prefix::String="")
     vec_to_confocal = vec -> nir_vec_to_confocal(vec, data_dict["$(prefix)confocal_to_nir"], data_dict["$(prefix)max_t"])
-    data_dict["nir_self_intersect_ratio"] = Vector{Float64}()
-    data_dict["nir_self_intersect_ratio_head"] = Vector{Float64}()
-    max_med_len = param["segment_len"] * param["max_pt"]
+    data_dict["nir_nose_curling"] = Vector{Float64}()
     for t=1:data_dict["max_t_nir"]
-        if length(data_dict["med_axis_dict"][t][1]) < max_med_len
-            push!(data_dict["nir_self_intersect_ratio"], NaN)
-            push!(data_dict["nir_self_intersect_ratio_head"], NaN)
+        if length(data_dict["segment_end_matrix"][t]) < param["max_pt"]
+            push!(data_dict["nir_nose_curling"], NaN)
         else
-            push!(data_dict["nir_self_intersect_ratio"], 1 ./self_intersect_ratio(map(x->x[1:max_med_len], data_dict["med_axis_dict"][t])))
-            push!(data_dict["nir_self_intersect_ratio_head"], 1 ./self_intersect_ratio(map(x->x[1:max_med_len], data_dict["med_axis_dict"][t]), max_i=param["segment_len"]*param["head_pts"][3]))
+            push!(data_dict["nir_nose_curling"], self_intersect_ratio(data_dict["x_array"][t,:], data_dict["y_array"][t,:], data_dict["segment_end_matrix"][t][1:param["max_pt"]], max_i=1))
         end
     end
-    data_dict["nir_self_intersect_ratio"] = impute_list(data_dict["nir_self_intersect_ratio"])
-    data_dict["nir_self_intersect_ratio_head"] = impute_list(data_dict["nir_self_intersect_ratio_head"]);
-    data_dict["$(prefix)self_intersect_ratio"] = vec_to_confocal(data_dict["nir_self_intersect_ratio"])
-    data_dict["$(prefix)self_intersect_ratio_head"] = vec_to_confocal(data_dict["nir_self_intersect_ratio_head"]);
+    data_dict["nir_nose_curling"] = impute_list(data_dict["nir_nose_curling"])
+    data_dict["$(prefix)nose_curling"] = vec_to_confocal(data_dict["nir_nose_curling"])
 end
 
 """

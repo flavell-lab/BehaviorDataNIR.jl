@@ -23,7 +23,7 @@ export
     get_angular_velocity!,
     get_velocity!,
     get_curvature_variables!,
-    get_self_intersection!,
+    get_nose_curling!,
     merge_nir_data!,
     import_pumping!,
     # stage_data.jl
@@ -81,7 +81,7 @@ export
     get_worm_body_angle,
     get_worm_vector,
     get_tot_worm_curvature,
-    self_intersect_ratio,
+    nose_curling,
     # analysis.jl
     get_tuning,
     # video.jl,

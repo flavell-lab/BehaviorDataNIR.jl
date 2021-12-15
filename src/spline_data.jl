@@ -72,18 +72,22 @@ end
 A value of 0 means that the worm is intersecting itself, while a value of 1 means the worm is a straight line.
 
 # Arguments:
-- `med_axis`: Medial axis of the worm.
-- `max_i` (default `Inf`): Maximum location along the medium axis to try.
+- `spline_x`: x positions in worm spline
+- `spline_y`: y positions in worm spline
+- `segment_end`: equally-spaced segments along worm spline
+- `max_i` (default `1`): Maximum location along the medium axis to try. For nose curling, use 1.
 """
-function self_intersect_ratio(med_axis; max_i=Inf)
+function nose_curling(spline_x, spline_y, segment_end; max_i=1)
     ratio = Inf
-    for i=1:length(med_axis[1])
+    for i=1:length(segment_end)
         if i > max_i
-            return ratio
+            return 1/ratio
         end
-        for j=i+1:length(med_axis[1])
-            ratio = min(ratio, euclidean_dist((med_axis[1][i], med_axis[2][i]), (med_axis[1][j], med_axis[2][j]))/(j-i))
+        pos1 = segment_end[i]
+        for j=i+1:length(segment_end)
+            pos2 = segment_end[j]
+            ratio = min(ratio, euclidean_dist((spline_x[pos1], spline_y[pos1]), (spline_x[pos2], spline_y[pos2]))/(j-i))
         end
     end
-    return ratio
+    return 1/ratio
 end
