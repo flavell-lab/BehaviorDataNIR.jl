@@ -125,7 +125,7 @@ function get_nose_curling!(data_dict::Dict, param::Dict; prefix::String="")
         if length(data_dict["segment_end_matrix"][t]) < param["max_pt"]
             push!(data_dict["nir_nose_curling"], NaN)
         else
-            push!(data_dict["nir_nose_curling"], self_intersect_ratio(data_dict["x_array"][t,:], data_dict["y_array"][t,:], data_dict["segment_end_matrix"][t][1:param["max_pt"]], max_i=1))
+            push!(data_dict["nir_nose_curling"], nose_curling(data_dict["x_array"][t,:], data_dict["y_array"][t,:], data_dict["segment_end_matrix"][t][1:param["max_pt"]], max_i=1))
         end
     end
     data_dict["nir_nose_curling"] = impute_list(data_dict["nir_nose_curling"])
