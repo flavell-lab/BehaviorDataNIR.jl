@@ -112,9 +112,6 @@ function filter_ai_laser(ai_laser, di_camera, max_ratio)
     idx_all = [i for i in 1:length(list_idx_end) if 
                     (list_idx_end[i] - list_idx_start[i]) * max_ratio >=
                     list_idx_end[idx_max] - list_idx_start[idx_max]]
-    println(list_idx_end)
-    println(list_idx_start)
-    println(list_idx_end .- list_idx_start)
     
     for idx = 1:length(list_idx_end)
         if idx == 1
