@@ -23,11 +23,11 @@ function detect_nir_timing(di_nir, img_id, q_iter_save, n_img_nir)
 
     list_nir_on = filter(x -> s_nir_start - 5 .< x .< s_nir_stop .+ 5, list_nir_on)
     list_nir_off = filter(x -> s_nir_start - 5 .< x .< s_nir_stop .+ 5, list_nir_off)
-    
+
     if length(list_nir_on) != length(list_nir_off)
         error("length(list_nir_on) != length(list_nir_off)")
     end
-    
+
     img_id_diff = diff(img_id)
     prepend!(img_id_diff, 1)
     if abs(length(list_nir_on) - sum(diff(img_id))) > 3
@@ -66,7 +66,7 @@ function detect_nir_timing(path_h5)
     img_timestamp = img_metadata["img_timestamp"]
     img_id = img_metadata["img_id"]
     q_iter_save = img_metadata["q_iter_save"]
-    
+
     detect_nir_timing(di_nir, img_id, q_iter_save, n_img_nir)
 end
 
@@ -84,11 +84,11 @@ function detect_confocal_timing(ai_laser)
     if length(list_stack_start) != length(list_stack_stop)
         error("n(stack_off_confocal) != n(stack_on_confocal)")
     end
-    
+
     list_stack_start, list_stack_stop
 end
 
-function filter_ai_laser(ai_laser, di_camera)
+function filter_ai_laser(ai_laser, di_camera, max_ratio)
     n_ai, n_di = length(ai_laser), length(di_camera)
     n = min(n_ai, n_di)
     ai_laser_zstack_only = Float64.(ai_laser[1:n])
@@ -109,8 +109,25 @@ function filter_ai_laser(ai_laser, di_camera)
 
     idx_max = argmax(list_idx_end .- list_idx_start)
 
-    ai_laser_zstack_only[1:list_idx_start[idx_max] - 1] .= 0
-    ai_laser_zstack_only[list_idx_end[idx_max] + 1:end] .= 0
+    idx_all = [i for i in 1:length(list_idx_end) if 
+                    (list_idx_end[i] - list_idx_start[i]) * max_ratio >=
+                    list_idx_end[idx_max] - list_idx_start[idx_max]]
+    println(list_idx_end)
+    println(list_idx_start)
+    println(list_idx_end .- list_idx_start)
+    
+    for idx = 1:length(list_idx_end)
+        if idx == 1
+            ai_laser_zstack_only[1:list_idx_start[idx] - 1] .= 0
+        elseif idx-1 in idx_all
+            ai_laser_zstack_only[list_idx_end[idx-1] + 1:list_idx_start[idx] - 1] .= 0
+        else
+            ai_laser_zstack_only[list_idx_start[idx-1]:list_idx_start[idx] - 1] .= 0
+        end
+        if idx == length(list_idx_end)
+            ai_laser_zstack_only[list_idx_end[idx] + 1:end] .= 0
+        end
+    end
 
     ai_laser_zstack_only
 end
@@ -139,11 +156,11 @@ function sync_timing(di_nir, ai_laser, img_id, q_iter_save, n_img_nir)
 
         nir_to_confocal[idx_] .= i
     end
-        
+
     confocal_to_nir, nir_to_confocal, timing_stack, timing_nir
 end
 
-function sync_timing(path_h5)
+function sync_timing(path_h5, max_ratio)
     n_img_nir, daqmx_ai, daqmx_di, img_metadata = h5open(path_h5, "r") do h5f
         n_img_nir = size(h5f["img_nir"])[3]
         daqmx_ai = read(h5f, "daqmx_ai")
@@ -152,7 +169,7 @@ function sync_timing(path_h5)
         n_img_nir, daqmx_ai, daqmx_di, img_metadata
     end
 
-    ai_laser = filter_ai_laser(daqmx_ai[:,1], daqmx_di[:,1])
+    ai_laser = filter_ai_laser(daqmx_ai[:,1], daqmx_di[:,1], max_ratio)
     ai_piezo = daqmx_ai[:,2]
     ai_stim = daqmx_ai[:,3]
     di_confocal = Float32.(daqmx_di[:,1])
@@ -160,7 +177,7 @@ function sync_timing(path_h5)
     img_timestamp = img_metadata["img_timestamp"]
     img_id = img_metadata["img_id"]
     q_iter_save = img_metadata["q_iter_save"]
-    
+
     sync_timing(di_nir, ai_laser, img_id, q_iter_save, n_img_nir)
 end
 
@@ -184,7 +201,7 @@ function signal_stack_repeatability(signal, timing_stack; sampling_rate=5000)
     signal_eta_u = dropdims(mean(signal_eta, dims=1), dims=1)
     signal_eta_s = dropdims(std(signal_eta, dims=1), dims=1)
     list_t = collect(1:n_stack_len) / sampling_rate
-    
+
     signal_eta_u, signal_eta_s, list_t, n_stack
 end
 
@@ -255,16 +272,16 @@ end
 Initializes all timing and syncing variables into `data_dict::Dict` given `param::Dict`, `path_h5::String` and the `h5_confocal_time_lag::Integer`
 """
 function get_timing_info!(data_dict::Dict, param::Dict, path_h5::String, h5_confocal_time_lag::Integer)
-    data_dict["confocal_to_nir"], data_dict["nir_to_confocal"], data_dict["timing_stack"], data_dict["timing_nir"] = sync_timing(path_h5);
+    data_dict["confocal_to_nir"], data_dict["nir_to_confocal"], data_dict["timing_stack"], data_dict["timing_nir"] = sync_timing(path_h5, param["max_ratio"]);
 
     if h5_confocal_time_lag == 0
         data_dict["confocal_to_nir"] = data_dict["confocal_to_nir"][1:param["max_t"]]
         data_dict["timing_stack"] = data_dict["timing_stack"][1:param["max_t"]]
         data_dict["nir_to_confocal"] = [(x > param["max_t"]) ? 0.0 : x for x in data_dict["nir_to_confocal"]]
     else
-        data_dict["confocal_to_nir"] = data_dict["confocal_to_nir"][h5_confocal_time_lag+2:end]
-        data_dict["timing_stack"] = data_dict["timing_stack"][h5_confocal_time_lag+2:end]
-        data_dict["nir_to_confocal"] = [(x < h5_confocal_time_lag + 2) ? 0.0 : x - (h5_confocal_time_lag + 1) for x in data_dict["nir_to_confocal"]]
+        data_dict["confocal_to_nir"] = data_dict["confocal_to_nir"][h5_confocal_time_lag+1:end]
+        data_dict["timing_stack"] = data_dict["timing_stack"][h5_confocal_time_lag+1:end]
+        data_dict["nir_to_confocal"] = [(x < h5_confocal_time_lag + 1) ? 0.0 : x - h5_confocal_time_lag for x in data_dict["nir_to_confocal"]]
     end
     data_dict["nir_timestamps"] = get_timestamps(path_h5)
     vec_to_confocal = vec -> nir_vec_to_confocal(vec, data_dict["confocal_to_nir"], param["max_t"])
@@ -328,7 +345,7 @@ function fill_timeskip(traces, timestamps; min_timeskip_length=5, timeskip_step=
     end
     return new_timestamps, new_traces_matrix
 end        
-        
+
 function fill_timeskip_behavior(behavior, timestamps; min_timeskip_length=5, timeskip_step=1, fill_val=NaN)
     vec = zeros(1, length(behavior))
     vec[1,:] .= behavior
