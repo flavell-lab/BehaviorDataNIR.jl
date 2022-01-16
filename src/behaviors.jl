@@ -95,8 +95,8 @@ function get_velocity!(data_dict::Dict, param::Dict; prefix::String="")
     data_dict["$(prefix)speed_stage"] = vec_to_confocal(data_dict["nir_speed_stage"])
     data_dict["nir_velocity_stage"] = data_dict["nir_speed_stage"] .* cos.(data_dict["nir_mov_angle_stage"] .- data_dict["pm_angle"])
     data_dict["$(prefix)velocity_stage"] = vec_to_confocal(data_dict["nir_velocity_stage"])
-    data_dict["$(prefix)reversal_events"], data_dict["$(prefix)all_rev"] = get_reversal_events(param, data_dict["$(prefix)velocity_stage"], data_dict["$(prefix)t_range"]);
-    data_dict["$(prefix)rev_times"] = compute_reversal_times(data_dict["$(prefix)all_rev"], maximum(data_dict["$(prefix)t_range"]));
+    data_dict["$(prefix)reversal_events"], data_dict["$(prefix)all_rev"] = get_reversal_events(param, data_dict["$(prefix)velocity_stage"], data_dict["$(prefix)t_range"], data_dict["$(prefix)max_t"]);
+    data_dict["$(prefix)rev_times"] = compute_reversal_times(data_dict["$(prefix)all_rev"], data_dict["$(prefix)max_t"]);
 end
 
 """

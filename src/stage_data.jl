@@ -172,14 +172,15 @@ Finds reversal events.
     - `rev_v_thresh`: Velocity threshold below which the worm is counted as reversing
 - `velocity`: Worm velocity
 - `t_range`: Time range over which to compute reversal events
+- `max_t`: Maximum time point
 """
-function get_reversal_events(param, velocity, t_range)
+function get_reversal_events(param, velocity, t_range, max_t)
     reversal_events = []
     len_thresh = param["rev_len_thresh"]
     reverse_length = 0
     v_thresh = param["rev_v_thresh"]
     t_inc = t_range
-    for t in 1:param["max_t"]
+    for t in 1:max_t
         if velocity[t] < v_thresh && (t in t_inc || reverse_length > 0)
             reverse_length += 1
         elseif reverse_length >= len_thresh
