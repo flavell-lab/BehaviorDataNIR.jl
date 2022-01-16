@@ -179,7 +179,7 @@ function get_reversal_events(param, velocity, t_range)
     reverse_length = 0
     v_thresh = param["rev_v_thresh"]
     t_inc = t_range
-    for t in 1:maximum(t_inc)
+    for t in 1:param["max_t"]
         if velocity[t] < v_thresh && (t in t_inc || reverse_length > 0)
             reverse_length += 1
         elseif reverse_length >= len_thresh
