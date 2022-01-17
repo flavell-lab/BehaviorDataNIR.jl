@@ -46,8 +46,9 @@ Computes total worm curvature
 # Arguments:
 - `body_angle`: Array of worm body angles
 - `min_len`: If there aren't this many angles at a given time point, interpolate that time point instead of computing it
+- `directional::Bool` (default `false`): Use directional curvature.
 """
-function get_tot_worm_curvature(body_angle, min_len)
+function get_tot_worm_curvature(body_angle, min_len; directional::Bool=false)
     worm_curvature = zeros(size(body_angle,2))
     for t=1:size(body_angle,2)
         all_angles = [body_angle[i,t] for i=1:size(body_angle,1) if !isnan(body_angle[i,t])]
@@ -55,8 +56,38 @@ function get_tot_worm_curvature(body_angle, min_len)
             worm_curvature[t] = NaN
         else
             all_angles = local_recenter_angle(all_angles)
-            worm_curvature[t] = std(all_angles)
+            if directional
+                worm_curvature[t] = (all_angles[1]-all_angles[min_len])/length(all_angles)
+            else
+                worm_curvature[t] = std(all_angles)
+            end
         end
     end
     return impute_list(worm_curvature)
+end
+
+
+
+""" Gets the smallest ratio between distance between two points in space and distance between them along the worm's curvature.
+A value of 0 means that the worm is intersecting itself, while a value of 1 means the worm is a straight line.
+
+# Arguments:
+- `spline_x`: x positions in worm spline
+- `spline_y`: y positions in worm spline
+- `segment_end`: equally-spaced segments along worm spline
+- `max_i` (default `1`): Maximum location along the medium axis to try. For nose curling, use 1.
+"""
+function nose_curling(spline_x, spline_y, segment_end; max_i=1)
+    ratio = Inf
+    for i=1:length(segment_end)
+        if i > max_i
+            return 1/ratio
+        end
+        pos1 = segment_end[i]
+        for j=i+1:length(segment_end)
+            pos2 = segment_end[j]
+            ratio = min(ratio, euclidean_dist((spline_x[pos1], spline_y[pos1]), (spline_x[pos2], spline_y[pos2]))/(j-i))
+        end
+    end
+    return 1/ratio
 end

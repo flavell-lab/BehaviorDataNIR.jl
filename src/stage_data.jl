@@ -115,13 +115,6 @@ function magnitude_vec(list_v::Array{<:AbstractFloat,2})
     sqrt.(list_v[1, :] .^ 2 .+ list_v[2, :] .^ 2)
 end
 
-# A = [0.9 0.1; 0.9 0.1] # transition matrix
-# B = [Normal(170,10), Normal(13,5)] # observation dist, mean and variance
-function reversal_state(list::Array{<:AbstractFloat,1}, A, B)
-    hmm = HMM(A, B)
-    viterbi(hmm, list)
-end
-
 """
 Corrects x and y position variables to correspond to the worm centroid, rather than the worm pharynx.
 
@@ -154,6 +147,22 @@ function offset_xy(x_imp, y_imp, x_array, y_array, segment_end_matrix, seg_range
     return (x_imp_offset, y_imp_offset, err_timepts)
 end
 
+function offset_xy(x_imp, y_imp, pos_med; unbin_fn=x->unit_bfs_pix_to_stage_unit(2*x+3))
+    x_imp_offset = []
+    y_imp_offset = []
+    err_timepts = []
+    last_x_offset = unbin_fn(pos_med[1,1])
+    last_y_offset = unbin_fn(pos_med[2,1])
+    for t=1:length(x_imp)
+        last_x_offset = unbin_fn(pos_med[1,t]) * pos_med[3,t] + last_x_offset * (1 - pos_med[3,t])
+        last_y_offset = unbin_fn(pos_med[2,t]) * pos_med[3,t] + last_y_offset * (1 - pos_med[3,t])
+        push!(x_imp_offset, x_imp[t] - last_x_offset)
+        push!(y_imp_offset, y_imp[t] - last_y_offset)
+    end
+    return (x_imp_offset, y_imp_offset)
+end
+
+
 """
 Finds reversal events.
 
@@ -163,14 +172,15 @@ Finds reversal events.
     - `rev_v_thresh`: Velocity threshold below which the worm is counted as reversing
 - `velocity`: Worm velocity
 - `t_range`: Time range over which to compute reversal events
+- `max_t`: Maximum time point
 """
-function get_reversal_events(param, velocity, t_range)
+function get_reversal_events(param, velocity, t_range, max_t)
     reversal_events = []
     len_thresh = param["rev_len_thresh"]
     reverse_length = 0
     v_thresh = param["rev_v_thresh"]
     t_inc = t_range
-    for t in 1:maximum(t_inc)
+    for t in 1:max_t
         if velocity[t] < v_thresh && (t in t_inc || reverse_length > 0)
             reverse_length += 1
         elseif reverse_length >= len_thresh

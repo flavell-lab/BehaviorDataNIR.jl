@@ -23,11 +23,11 @@ function detect_nir_timing(di_nir, img_id, q_iter_save, n_img_nir)
 
     list_nir_on = filter(x -> s_nir_start - 5 .< x .< s_nir_stop .+ 5, list_nir_on)
     list_nir_off = filter(x -> s_nir_start - 5 .< x .< s_nir_stop .+ 5, list_nir_off)
-    
+
     if length(list_nir_on) != length(list_nir_off)
         error("length(list_nir_on) != length(list_nir_off)")
     end
-    
+
     img_id_diff = diff(img_id)
     prepend!(img_id_diff, 1)
     if abs(length(list_nir_on) - sum(diff(img_id))) > 3
@@ -66,7 +66,7 @@ function detect_nir_timing(path_h5)
     img_timestamp = img_metadata["img_timestamp"]
     img_id = img_metadata["img_id"]
     q_iter_save = img_metadata["q_iter_save"]
-    
+
     detect_nir_timing(di_nir, img_id, q_iter_save, n_img_nir)
 end
 
@@ -84,8 +84,49 @@ function detect_confocal_timing(ai_laser)
     if length(list_stack_start) != length(list_stack_stop)
         error("n(stack_off_confocal) != n(stack_on_confocal)")
     end
-    
+
     list_stack_start, list_stack_stop
+end
+
+function filter_ai_laser(ai_laser, di_camera, max_ratio)
+    n_ai, n_di = length(ai_laser), length(di_camera)
+    n = min(n_ai, n_di)
+    ai_laser_zstack_only = Float64.(ai_laser[1:n])
+    trg_state = zeros(Float64, n)
+
+    n_y = n
+    n_kernel = 100
+    @simd for i = 1:n_y
+        start = max(1, i - n_kernel)
+        stop = min(n_y, i + n_kernel)
+
+        trg_state[i] = maximum(di_camera[start:stop])
+    end
+
+    Δtrg_state = diff(trg_state)    
+    list_idx_start = findall(Δtrg_state .== 1)
+    list_idx_end = findall(Δtrg_state .== -1)
+
+    idx_max = argmax(list_idx_end .- list_idx_start)
+
+    idx_all = [i for i in 1:length(list_idx_end) if 
+                    (list_idx_end[i] - list_idx_start[i]) * max_ratio >=
+                    list_idx_end[idx_max] - list_idx_start[idx_max]]
+    
+    for idx = 1:length(list_idx_end)
+        if idx == 1
+            ai_laser_zstack_only[1:list_idx_start[idx] - 1] .= 0
+        elseif idx-1 in idx_all
+            ai_laser_zstack_only[list_idx_end[idx-1] + 1:list_idx_start[idx] - 1] .= 0
+        else
+            ai_laser_zstack_only[list_idx_start[idx-1]:list_idx_start[idx] - 1] .= 0
+        end
+        if idx == length(list_idx_end)
+            ai_laser_zstack_only[list_idx_end[idx] + 1:end] .= 0
+        end
+    end
+
+    ai_laser_zstack_only
 end
 
 function sync_timing(di_nir, ai_laser, img_id, q_iter_save, n_img_nir)
@@ -112,11 +153,11 @@ function sync_timing(di_nir, ai_laser, img_id, q_iter_save, n_img_nir)
 
         nir_to_confocal[idx_] .= i
     end
-        
+
     confocal_to_nir, nir_to_confocal, timing_stack, timing_nir
 end
 
-function sync_timing(path_h5)
+function sync_timing(path_h5, max_ratio)
     n_img_nir, daqmx_ai, daqmx_di, img_metadata = h5open(path_h5, "r") do h5f
         n_img_nir = size(h5f["img_nir"])[3]
         daqmx_ai = read(h5f, "daqmx_ai")
@@ -125,7 +166,7 @@ function sync_timing(path_h5)
         n_img_nir, daqmx_ai, daqmx_di, img_metadata
     end
 
-    ai_laser = daqmx_ai[:,1]
+    ai_laser = filter_ai_laser(daqmx_ai[:,1], daqmx_di[:,1], max_ratio)
     ai_piezo = daqmx_ai[:,2]
     ai_stim = daqmx_ai[:,3]
     di_confocal = Float32.(daqmx_di[:,1])
@@ -133,7 +174,7 @@ function sync_timing(path_h5)
     img_timestamp = img_metadata["img_timestamp"]
     img_id = img_metadata["img_id"]
     q_iter_save = img_metadata["q_iter_save"]
-    
+
     sync_timing(di_nir, ai_laser, img_id, q_iter_save, n_img_nir)
 end
 
@@ -157,7 +198,7 @@ function signal_stack_repeatability(signal, timing_stack; sampling_rate=5000)
     signal_eta_u = dropdims(mean(signal_eta, dims=1), dims=1)
     signal_eta_s = dropdims(std(signal_eta, dims=1), dims=1)
     list_t = collect(1:n_stack_len) / sampling_rate
-    
+
     signal_eta_u, signal_eta_s, list_t, n_stack
 end
 
@@ -211,4 +252,118 @@ function nir_to_confocal_t(t, nir_to_confocal)
         end
     end
     return 1
+end
+
+"""
+Gets NIR timestamps from the NIR data file
+"""
+function get_timestamps(path_h5)
+    f = h5open(path_h5, "r")
+    timestamps = f["img_metadata"]["img_timestamp"][:]
+    saving = f["img_metadata"]["q_iter_save"][:]
+    close(f)
+    return timestamps[saving] ./ 1e9
+end
+
+"""
+Initializes all timing and syncing variables into `data_dict::Dict` given `param::Dict`, `path_h5::String` and the `h5_confocal_time_lag::Integer`
+"""
+function get_timing_info!(data_dict::Dict, param::Dict, path_h5::String, h5_confocal_time_lag::Integer)
+    data_dict["confocal_to_nir"], data_dict["nir_to_confocal"], data_dict["timing_stack"], data_dict["timing_nir"] = sync_timing(path_h5, param["max_ratio"]);
+
+    if h5_confocal_time_lag == 0
+        data_dict["confocal_to_nir"] = data_dict["confocal_to_nir"][1:param["max_t"]]
+        data_dict["timing_stack"] = data_dict["timing_stack"][1:param["max_t"]]
+        data_dict["nir_to_confocal"] = [(x > param["max_t"]) ? 0.0 : x for x in data_dict["nir_to_confocal"]]
+    else
+        data_dict["confocal_to_nir"] = data_dict["confocal_to_nir"][h5_confocal_time_lag+1:end]
+        data_dict["timing_stack"] = data_dict["timing_stack"][h5_confocal_time_lag+1:end]
+        data_dict["nir_to_confocal"] = [(x < h5_confocal_time_lag + 1) ? 0.0 : x - h5_confocal_time_lag for x in data_dict["nir_to_confocal"]]
+    end
+    data_dict["nir_timestamps"] = get_timestamps(path_h5)
+    vec_to_confocal = vec -> nir_vec_to_confocal(vec, data_dict["confocal_to_nir"], param["max_t"])
+
+    data_dict["timestamps"] = vec_to_confocal(data_dict["nir_timestamps"]);
+    data_dict["max_t_nir"] = length(data_dict["nir_to_confocal"])
+
+    data_dict["avg_timestep"] = (data_dict["timestamps"][end] - data_dict["timestamps"][1]) / length(data_dict["timestamps"])
+
+    data_dict["pre_nir_to_confocal"], data_dict["pre_confocal_to_nir"] = pre_confocal_timesteps(data_dict, param)
+    data_dict["max_t"] = param["max_t"]
+    data_dict["t_range"] = param["t_range"]
+
+    data_dict["pre_max_t"] = length(data_dict["pre_confocal_to_nir"]);
+    data_dict["pre_t_range"] = collect(1:data_dict["pre_max_t"]);
+
+
+    stim = h5read(path_h5, "daqmx_ai")[:,3]
+    timing_nir = BehaviorDataNIR.detect_nir_timing(path_h5)
+    thresh = max(maximum(stim)/2, 0.1)
+    stim_to_nir = findall(x->x>thresh, stim[round.(Int, dropdims(mean(timing_nir, dims=2), dims=2))])
+    prev_len = 20
+    stim_begin_nir = [t for t in stim_to_nir if !any([t-i in stim_to_nir for i=1:prev_len])]
+    stim_to_confocal = [maximum(data_dict["nir_to_confocal"][1:stim_begin_nir[i]]) for i=1:length(stim_begin_nir)]
+    data_dict["stim_begin_nir"] = stim_begin_nir
+    data_dict["stim_begin_confocal"] = stim_to_confocal;
+end
+
+"""
+Fills in timeskips with multiple 0 datapoints for easier visualization.
+
+# Arguments:
+- `traces`: Traces matrix with timeskips
+- `timestamps`: Timestamps for all data points in the traces matrix
+- `min_timeskip_length` (default 5): Minimum difference (in seconds) between adjacent data points to qualify as a timeskip.
+- `timeskip_step` (default 1): Number of seconds per intermediate data point generated.
+"""
+function fill_timeskip(traces, timestamps; min_timeskip_length=5, timeskip_step=1, fill_val=0)
+    timeskips = [t for t in 1:length(timestamps)-1 if diff(timestamps)[t] >= min_timeskip_length]
+    num_timeskips = length(timeskips)
+    new_traces = [[] for n=1:size(traces,1)]
+    new_timestamps = []
+    prev_timeskip = 1
+    for timeskip in timeskips
+        num_steps = floor((timestamps[timeskip+1] - timestamps[timeskip]) ÷ timeskip_step)
+        for n=1:size(traces,1)
+            append!(new_traces[n], traces[n,prev_timeskip:timeskip])
+            append!(new_traces[n], [fill_val for t=1:num_steps])
+        end
+        append!(new_timestamps, timestamps[prev_timeskip:timeskip])
+        append!(new_timestamps, [timestamps[timeskip] + t*timeskip_step for t=1:num_steps])
+    end
+    for n=1:size(traces,1)
+        append!(new_traces[n], traces[n,timeskips[end]+1:end])
+    end
+    append!(new_timestamps, timestamps[timeskips[end]+1:end])
+
+    new_traces_matrix = zeros(size(traces,1), length(new_traces[1]))
+    for n=1:size(traces,1)
+        new_traces_matrix[n,:] .= new_traces[n]
+    end
+    return new_timestamps, new_traces_matrix
+end        
+
+function fill_timeskip_behavior(behavior, timestamps; min_timeskip_length=5, timeskip_step=1, fill_val=NaN)
+    vec = zeros(1, length(behavior))
+    vec[1,:] .= behavior
+    new_timestamps, new_vec = fill_timeskip(vec, timestamps, min_timeskip_length=min_timeskip_length, timeskip_step=timeskip_step, fill_val=fill_val)
+    return new_timestamps, new_vec[1,:]
+end
+
+"""
+Computes confocal timesteps backwards in time from the beginning of the confocal recording.
+"""
+function pre_confocal_timesteps(data_dict::Dict, param::Dict)
+    step = data_dict["avg_timestep"]*param["FLIR_FPS"]
+    idx = findall(x->x==1, data_dict["nir_to_confocal"])[1]-1
+    pre_nir_to_conf = zeros(idx)
+    n_prev = Int(floor(idx/step))
+    pre_conf_to_nir = []
+    offset = idx - Int(floor(step * n_prev))
+    for t=1:n_prev
+        rng = Int(floor((t-1)*step+1+offset)):Int(floor(t*step+offset))
+        pre_nir_to_conf[rng] .= t
+        push!(pre_conf_to_nir, collect(rng))
+    end
+    return pre_nir_to_conf, pre_conf_to_nir
 end
