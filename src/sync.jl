@@ -259,7 +259,7 @@ end
 Initializes all timing and syncing variables into `data_dict::Dict` given `param::Dict`, `path_h5::String` and the `h5_confocal_time_lag::Integer`
 """
 function get_timing_info!(data_dict::Dict, param::Dict, path_h5::String, h5_confocal_time_lag::Integer)
-    data_dict["confocal_to_nir"], data_dict["nir_to_confocal"], data_dict["timing_stack"], data_dict["timing_nir"] = sync_timing(path_h5, param["max_ratio"]);
+    data_dict["confocal_to_nir"], data_dict["nir_to_confocal"], data_dict["timing_stack"], data_dict["timing_nir"] = sync_timing(path_h5, param["n_rec"]);
 
     if h5_confocal_time_lag == 0
         data_dict["confocal_to_nir"] = data_dict["confocal_to_nir"][1:param["max_t"]]
