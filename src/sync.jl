@@ -147,7 +147,7 @@ function sync_timing(di_nir, ai_laser, img_id, q_iter_save, n_img_nir)
     confocal_to_nir, nir_to_confocal, timing_stack, timing_nir
 end
 
-function sync_timing(path_h5, max_ratio)
+function sync_timing(path_h5, n_rec=1)
     n_img_nir, daqmx_ai, daqmx_di, img_metadata = h5open(path_h5, "r") do h5f
         n_img_nir = size(h5f["img_nir"])[3]
         daqmx_ai = read(h5f, "daqmx_ai")
@@ -156,7 +156,7 @@ function sync_timing(path_h5, max_ratio)
         n_img_nir, daqmx_ai, daqmx_di, img_metadata
     end
 
-    ai_laser = filter_ai_laser(daqmx_ai[:,1], daqmx_di[:,1], max_ratio)
+    ai_laser = filter_ai_laser(daqmx_ai[:,1], daqmx_di[:,1], n_rec)
     ai_piezo = daqmx_ai[:,2]
     ai_stim = daqmx_ai[:,3]
     di_confocal = Float32.(daqmx_di[:,1])
