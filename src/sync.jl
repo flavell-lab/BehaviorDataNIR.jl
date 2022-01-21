@@ -85,13 +85,20 @@ function detect_confocal_timing(ai_laser)
         error("n(stack_off_confocal) != n(stack_on_confocal)")
     end
 
-    list_stack_start, list_stack_stop
+    list_stack_diff = list_stack_stop .- list_stack_start
+    idx_vol = 1:length(list_stack_diff)
+    if diff(list_stack_diff)[end] < -3
+        idx_vol = 1:(length(list_stack_diff) - 1)
+    end
+
+    list_stack_start[idx_vol], list_stack_stop[idx_vol]
 end
 
-function filter_ai_laser(ai_laser, di_camera, max_ratio)
+function filter_ai_laser(ai_laser, di_camera, n_rec=1)
     n_ai, n_di = length(ai_laser), length(di_camera)
     n = min(n_ai, n_di)
-    ai_laser_zstack_only = Float64.(ai_laser[1:n])
+    ai_laser_zstack_only = Float32.(ai_laser[1:n])
+    ai_laser_filter_bit = zeros(Float32, n)
     trg_state = zeros(Float64, n)
 
     n_y = n
@@ -107,38 +114,21 @@ function filter_ai_laser(ai_laser, di_camera, max_ratio)
     list_idx_start = findall(Δtrg_state .== 1)
     list_idx_end = findall(Δtrg_state .== -1)
 
-    idx_max = argmax(list_idx_end .- list_idx_start)
-
-    idx_all = [i for i in 1:length(list_idx_end) if 
-                    (list_idx_end[i] - list_idx_start[i]) * max_ratio >=
-                    list_idx_end[idx_max] - list_idx_start[idx_max]]
-    
-    for idx = 1:length(list_idx_end)
-        if idx == 1
-            ai_laser_zstack_only[1:list_idx_start[idx] - 1] .= 0
-        elseif idx-1 in idx_all
-            ai_laser_zstack_only[list_idx_end[idx-1] + 1:list_idx_start[idx] - 1] .= 0
-        else
-            ai_laser_zstack_only[list_idx_start[idx-1]:list_idx_start[idx] - 1] .= 0
-        end
-        if idx == length(list_idx_end)
-            ai_laser_zstack_only[list_idx_end[idx] + 1:end] .= 0
-        end
+    if n_rec > length(list_idx_start)
+        error("filter_ai_laser: not enough recording detected. check n_rec")
     end
-
-    ai_laser_zstack_only
+    
+    list_idx_rec = sortperm(list_idx_end .- list_idx_start, rev=true)[1:n_rec]
+    for i = list_idx_rec
+        ai_laser_filter_bit[list_idx_start[i]+1:list_idx_end[i]-1] .= 1
+    end
+    
+    ai_laser_filter_bit .* ai_laser_zstack_only
 end
 
 function sync_timing(di_nir, ai_laser, img_id, q_iter_save, n_img_nir)
     timing_stack = hcat(detect_confocal_timing(ai_laser)...)
     timing_nir = detect_nir_timing(di_nir, img_id, q_iter_save, n_img_nir)
-
-    if timing_stack[1,1] > timing_stack[1,2]
-        val = timing_stack[end,2]
-        timing_stack_new = timing_stack[1:end-1,:]
-        timing_stack_new[:,2] .= timing_stack[2:end,2]
-        timing_stack = timing_stack_new
-    end
 
     confocal_to_nir = []
     nir_to_confocal = zeros(size(timing_nir,1))
