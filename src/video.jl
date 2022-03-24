@@ -41,7 +41,7 @@ function write_behavior_video(path_h5, path_vid=nothing; fps=20, encoder_options
         end
             
         
-        open_video_out(path_vid, img_t1, framerate=20,
+        open_video_out(path_vid, img_t1, framerate=fps,
             encoder_options=encoder_options, codec_name="libx264",
             target_pix_fmt=target_pix_fmt) do vidf
             @showprogress for t = 2:n_t
@@ -134,7 +134,7 @@ function write_mip_video(param_path, num_timepts, ch, path_vid=nothing; fps=20, 
 
     img_t1 = maxprj(read_img(MHD(joinpath(param_path["path_dir_mhd"], param_path["get_basename"](1, ch)*".mhd"))),dims=3)
 
-    open_video_out(path_vid, img_t1, framerate=20,
+    open_video_out(path_vid, img_t1, framerate=fps,
         encoder_options=encoder_options, codec_name="libx264",
         target_pix_fmt=target_pix_fmt) do vidf
         @showprogress for t = 2:num_timepts
