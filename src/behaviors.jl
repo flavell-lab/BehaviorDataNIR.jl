@@ -215,7 +215,7 @@ Import pumping data into a combined dataset given `param` from csv files.
 Can add a `prefix` (default empty string) to all confocal variables.
 If `prefix` is added, will output a list of pumping for each dataset rather than merging them together.
 """
-function import_pumping!(combined_data_dict::Dict, param::Dict, paths_pumping; prefix::String="")
+function import_pumping!(combined_data_dict::Dict, param::Dict, paths_pumping; prefix::String="", is_split=false)
     combined_data_dict["nir_pumping_raw"] = Float64[]
     combined_data_dict["nir_pumping"] = Float64[]
     combined_data_dict["$(prefix)pumping_raw"] = []
@@ -224,21 +224,22 @@ function import_pumping!(combined_data_dict::Dict, param::Dict, paths_pumping; p
     dataset_combine_fn! = isempty(prefix) ? append! : push!
 
     for (d, file) in enumerate(paths_pumping)
+        postfix = is_split ? "_$d" : ""
         pumping = readdlm(file, ',', Any, '\n')
-        pumping_nir_raw = param["FLIR_FPS"] .* [(t in floor.(Int64.(pumping[2:end,2])./50)) ? 1 : 0 for t in 1:combined_data_dict["max_t_nir_$d"]]
+        pumping_nir_raw = param["FLIR_FPS"] .* [(t in floor.(Int64.(pumping[2:end,2])./50)) ? 1 : 0 for t in 1:combined_data_dict["max_t_nir$(postfix)"]]
         append!(combined_data_dict["nir_pumping_raw"], pumping_nir_raw)
-        pumping_raw = nir_vec_to_confocal(pumping_nir_raw, combined_data_dict["$(prefix)confocal_to_nir_$d"], length(combined_data_dict["$(prefix)confocal_to_nir_$d"]))
+        pumping_raw = nir_vec_to_confocal(pumping_nir_raw, combined_data_dict["$(prefix)confocal_to_nir$(postfix)"], length(combined_data_dict["$(prefix)confocal_to_nir$(postfix)"]))
         
         pumping_nir_filt = savitzky_golay_filter(pumping_nir_raw, param["filt_len_pumping"], is_derivative=false, has_inflection=false)
-        pumping_conf = nir_vec_to_confocal(pumping_nir_filt, combined_data_dict["$(prefix)confocal_to_nir_$d"], length(combined_data_dict["$(prefix)confocal_to_nir_$d"]))
+        pumping_conf = nir_vec_to_confocal(pumping_nir_filt, combined_data_dict["$(prefix)confocal_to_nir$(postfix)"], length(combined_data_dict["$(prefix)confocal_to_nir$(postfix)"]))
         append!(combined_data_dict["nir_pumping"], pumping_nir_filt)
         
-        pumping_conf = nir_vec_to_confocal(pumping_nir_filt, combined_data_dict["$(prefix)confocal_to_nir_$d"], length(combined_data_dict["$(prefix)confocal_to_nir_$d"]))
+        pumping_conf = nir_vec_to_confocal(pumping_nir_filt, combined_data_dict["$(prefix)confocal_to_nir$(postfix)"], length(combined_data_dict["$(prefix)confocal_to_nir$(postfix)"]))
 
         dataset_combine_fn!(combined_data_dict["$(prefix)pumping_raw"], pumping_raw)
         dataset_combine_fn!(combined_data_dict["$(prefix)pumping"], pumping_conf)
 
-        if length(paths_pumping) == 1
+        if length(paths_pumping) == 1 && is_split
             dataset_combine_fn!(combined_data_dict["$(prefix)pumping_raw"], nir_vec_to_confocal(pumping_nir_raw, combined_data_dict["$(prefix)confocal_to_nir_2"], length(combined_data_dict["$(prefix)confocal_to_nir_2"])))
             dataset_combine_fn!(combined_data_dict["$(prefix)pumping"], nir_vec_to_confocal(pumping_nir_filt, combined_data_dict["$(prefix)confocal_to_nir_2"], length(combined_data_dict["$(prefix)confocal_to_nir_2"])))
         end
