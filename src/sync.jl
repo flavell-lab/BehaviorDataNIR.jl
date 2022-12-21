@@ -1,3 +1,16 @@
+"""
+    detect_nir_timing(di_nir, img_id, q_iter_save, n_img_nir)
+
+Detect the start and stop time of the NIR camera recording.
+
+Arguments
+---------
+* `di_nir`: digital input from the NIR camera
+* `img_id`: image id
+* `q_iter_save`: whether the image is saved
+* `n_img_nir`: number of NIR images
+---------
+"""
 function detect_nir_timing(di_nir, img_id, q_iter_save, n_img_nir)
     # behavior camera - FLIR
     list_nir_on = findall(diff(di_nir) .> 1) .+ 1
@@ -147,6 +160,17 @@ function sync_timing(di_nir, ai_laser, img_id, q_iter_save, n_img_nir)
     confocal_to_nir, nir_to_confocal, timing_stack, timing_nir
 end
 
+"""
+    sync_timing(path_h5, n_rec=1)
+
+Sync NIR and confocal timing. Returns `(n_img_nir, daqmx_ai, daqmx_di, img_metadata)`
+
+# Arguments
+---------
+* `path_h5::String`: path to h5 file
+* `n_rec::Int`: number of recordings in the file
+---------
+"""
 function sync_timing(path_h5, n_rec=1)
     n_img_nir, daqmx_ai, daqmx_di, img_metadata = h5open(path_h5, "r") do h5f
         n_img_nir = size(h5f["img_nir"])[3]
@@ -168,6 +192,18 @@ function sync_timing(path_h5, n_rec=1)
     sync_timing(di_nir, ai_laser, img_id, q_iter_save, n_img_nir)
 end
 
+"""
+    sync_stim(stim, timing_stack, timing_nir)
+
+Align stim to confocal and NIR timing. Returns `(stim_to_confocal, stim_to_nir)`
+
+# Arguments
+---------
+* `stim::Vector`: stim signal
+* `timing_stack`: confocal timing
+* `timing_nir`: NIR timing
+---------
+"""
 function sync_stim(stim, timing_stack, timing_nir)
     stim_to_confocal = [mean(stim[timing_stack[i,1]:timing_stack[i,2]]) for i = 1:size(timing_stack,1)]
     stim_to_nir = stim[round.(Int, dropdims(mean(timing_nir, dims=2), dims=2))]
@@ -175,6 +211,19 @@ function sync_stim(stim, timing_stack, timing_nir)
     stim_to_confocal, stim_to_nir
 end
 
+"""
+    signal_stack_repeatability(signal, timing_stack; sampling_rate=5000)
+
+Calculate signal repeatability. Returns `(signal_eta_u, signal_eta_s, list_t)`
+e.g. checking z-stack repeatability
+
+# Arguments
+---------
+* `signal::Vector`: signal
+* `timing_stack`: confocal timing
+* `sampling_rate::Int`: sampling rate (Hz)
+---------
+"""
 function signal_stack_repeatability(signal, timing_stack; sampling_rate=5000)
     s_stack_start = timing_stack[:,1]
     s_stack_end = timing_stack[:,2]
