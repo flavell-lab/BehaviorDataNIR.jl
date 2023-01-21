@@ -43,7 +43,7 @@ function get_nn_graph(xs, ys)
     pts_array = hcat(xs, ys)
     nn = py_skl_neighbors.NearestNeighbors(n_neighbors=2).fit(pts_array)
     g = nn.kneighbors_graph()
-    g_mat = py_nx.from_scipy_sparse_matrix(g)
+    g_mat = py_nx.from_scipy_sparse_array(g)
     
     g, g_mat
 end
