@@ -1,4 +1,6 @@
 """
+    get_tuning(activity, behavior, conv_fn; angle=nothing)
+
 Gets the tuning of a neuron's activity pattern to a behavior.
 Effectively, this function makes a scatterplot of activity vs behavior,
 and for each value of behavior, computes what the typical neuron activity is by

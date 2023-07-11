@@ -263,7 +263,32 @@ function get_img_boundary(img_bin; thickness=1)
     return boundary
 end
 
+"""
+    compute_worm_spline!(
+        param, path_h5, worm_seg_model, worm_thickness, med_axis_dict, pts_order_dict, is_omega_dict,
+        x_array, y_array, nir_worm_angle, eccentricity; timepts="all"
+    )
 
+Compute the worm spline for a given set of parameters. Writes to most of its input parameters.
+
+Arguments:
+- `param`: A dictionary containing the parameters for the worm spline computation.
+- `path_h5`: The path to the HDF5 file containing the worm data.
+- `worm_seg_model`: The worm segmentation model.
+- `worm_thickness`: The thickness of the worm.
+- `med_axis_dict`: A dictionary containing where to write medial axis data.
+- `pts_order_dict`: A dictionary containing where to write the order of spline points.
+- `is_omega_dict`: A dictionary containing where to write values of whether the worm is self-intersecting.
+- `x_array`: An array containing the x-coordinates of the worm splines. Will be modified.
+- `y_array`: An array containing the y-coordinates of the worm splines. Will be modified.
+- `nir_worm_angle`: The angle of the worm.
+- `eccentricity`: The eccentricity of the worm.
+- `timepts`: The timepoints to compute the worm spline for. Defaults to "all".
+
+Returns:
+- `img_label`: An array containing the labeled image.
+- `errors`: A dictionary containing any errors that occurred during computation.
+"""
 function compute_worm_spline!(param, path_h5, worm_seg_model, worm_thickness, med_axis_dict, pts_order_dict, is_omega_dict,
         x_array, y_array, nir_worm_angle, eccentricity; timepts="all")
 

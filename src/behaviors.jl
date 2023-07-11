@@ -1,4 +1,6 @@
 """
+interpolate_splines!(data_dict)
+
 Interpolates worm splines to time points where the spline computation crashed.
 """
 function interpolate_splines!(data_dict)
@@ -13,6 +15,8 @@ end
 
 
 """
+get_body_angles!(data_dict::Dict, param::Dict; prefix::String="")
+
 Adds body angles to `data_dict` given `param`.
 Can add a `prefix` (default empty string) to all confocal variables.
 """
@@ -61,6 +65,8 @@ function get_body_angles!(data_dict::Dict, param::Dict; prefix::String="")
 end
 
 """
+    get_angular_velocity!(data_dict::Dict, param::Dict; prefix::String="")
+
 Gets angular velocity from `data_dict` and `param`.
 Can add a `prefix` (default empty string) to all confocal variables.
 """
@@ -74,6 +80,8 @@ function get_angular_velocity!(data_dict::Dict, param::Dict; prefix::String="")
 end
 
 """
+    get_velocity!(data_dict::Dict, param::Dict; prefix::String="")
+
 Gets velocity, speed, reversal, and related variables from `data_dict` and `param`.
 Can add a `prefix` (default empty string) to all confocal variables.
 """
@@ -100,6 +108,8 @@ function get_velocity!(data_dict::Dict, param::Dict; prefix::String="")
 end
 
 """
+    get_curvature_variables!(data_dict::Dict, param::Dict; prefix::String="")
+
 Gets curvature, head angle, and related variables from `data_dict` and `param`.
 Can add a `prefix` (default empty string) to all confocal variables.
 """
@@ -115,6 +125,8 @@ function get_curvature_variables!(data_dict::Dict, param::Dict; prefix::String="
 end
 
 """
+    get_nose_curling!(data_dict::Dict, param::Dict; prefix::String="")
+
 Gets self intersection variables from `data_dict` and `param`.
 Can add a `prefix` (default empty string) to all confocal variables.
 """
@@ -133,6 +145,8 @@ function get_nose_curling!(data_dict::Dict, param::Dict; prefix::String="")
 end
 
 """
+    merge_nir_data!(combined_data_dict::Dict, data_dict::Dict, data_dict_2::Dict, param::Dict)
+
 Modifies `combined_data_dict` to add merged NIR data from two datasets `data_dict` and `data_dict_2`,
 together with a parameter file `param` for the primary dataset.
 """
@@ -211,6 +225,8 @@ function merge_nir_data!(combined_data_dict::Dict, data_dict::Dict, data_dict_2:
 end
 
 """
+    import_pumping!(combined_data_dict::Dict, param::Dict, paths_pumping; prefix::String="", is_split=false)
+
 Import pumping data into a combined dataset given `param` from csv files.
 Can add a `prefix` (default empty string) to all confocal variables.
 If `prefix` is added, will output a list of pumping for each dataset rather than merging them together.
