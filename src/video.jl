@@ -125,7 +125,16 @@ function ds(img)
             img[1:2:end-1,2:2:end] .+ img[2:2:end,1:2:end-1]) ./ 4)
 end
 
+"""
+    encode_movie(input, output; fps=30)
 
+Encodes a movie from a sequence of images using ffmpeg.
+
+# Arguments:
+- `input`: Path to the input images
+- `output`: Path to the output video
+- `fps` (default 30): frames per second
+"""
 function encode_movie(input, output; fps=30)
     run(`ffmpeg -hide_banner -loglevel panic -y -framerate $fps -i $input -c:v libx264 -pix_fmt yuv420p -preset slow -b:v 16M $output`)
     nothing

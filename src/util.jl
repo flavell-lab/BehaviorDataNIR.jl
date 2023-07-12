@@ -14,6 +14,20 @@ function read_pos_feature(h5f::HDF5.File)
     pos_feature, pos_feature_unet
 end
 
+"""
+    read_pos_feature(path_h5::String)
+
+Reads the `pos_feature` dataset from an HDF5 file located at `path_h5`.
+
+# Arguments:
+- `path_h5::String`: Path to the HDF5 file.
+
+# Returns:
+- `pos_feature::Array{Float64,3}`: A 3D array of shape `(3, 3, n)` containing the feature position data.
+    The first row is the nose position, the second row is the metacorpus position, and the third row is the pharynx position.
+    The first column is the `x` position, the second column is the `y` position, and the third column is the confidence.
+- `pos_feature_unet::Array{Float64,3}`: The same as `pos_feature`, but in UNet (downsampled) coordinates.
+"""
 function read_pos_feature(path_h5::String)
     h5open(path_h5, "r") do h5f
         read_pos_feature(h5f)
@@ -21,6 +35,8 @@ function read_pos_feature(path_h5::String)
 end
 
 """
+    read_stage(path_h5::String)
+
 Reads the `pos_stage` dataset from an HDF5 file located at `path_h5`.
 
 # Arguments:
@@ -37,7 +53,23 @@ function read_stage(path_h5::String)
     end
 end
 
+"""
+    read_h5(path_h5::String)
 
+Reads the `pos_feature`, `pos_stage`, and `img_nir` datasets from an HDF5 file located at `path_h5`.
+
+# Arguments:
+- `path_h5::String`: Path to the HDF5 file.
+
+# Returns:
+- `img_nir::Array{Float64,3}`: A 3D array of shape `(x, y, n)` containing the NIR image data.
+- `pos_stage::Array{Float64,2}`: A 2D array of shape `(n, 2)` containing the stage position data.
+    The first column is the x position, and the second column is the y position.
+- `pos_feature::Array{Float64,3}`: A 3D array of shape `(3, 3, n)` containing the feature position data.
+    The first row is the nose position, the second row is the metacorpus position, and the third row is the pharynx position.
+    The first column is the `x` position, the second column is the `y` position, and the third column is the confidence.
+- `pos_feature_unet::Array{Float64,3}`: The same as `pos_feature`, but in UNet (downsampled) coordinates.
+"""
 function read_h5(path_h5::String)
     h5open(path_h5, "r") do h5f
         pos_feature, pos_feature_unet = read_pos_feature(h5f)
