@@ -3,8 +3,8 @@
 ## Spline computation
 ```@docs
 segment_worm!
-fit_spline
 compute_worm_spline!
+compute_worm_thickness
 get_segment_end_matrix
 interpolate_splines!
 ```
