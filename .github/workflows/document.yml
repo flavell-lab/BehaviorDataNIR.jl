@@ -32,68 +32,8 @@ jobs:
           token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - uses: actions/checkout@master
         with:
-          repository: flavell-lab/GPUFilter.jl
-          path: ./GPUFilter.jl
-          token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
-      - uses: actions/checkout@master
-        with:
-          repository: flavell-lab/NRRDIO.jl
-          path: ./NRRDIO.jl
-          token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
-      - uses: actions/checkout@master
-        with:
-          repository: flavell-lab/FFTRegGPU.jl
-          path: ./FFTRegGPU.jl
-          token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
-      - uses: actions/checkout@master
-        with:
-          repository: flavell-lab/ImageDataIO.jl
-          path: ./ImageDataIO.jl
-          token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
-      - uses: actions/checkout@master
-        with:
           repository: flavell-lab/UNet2D.jl
           path: ./UNet2D.jl
-          token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
-      - uses: actions/checkout@master
-        with:
-          repository: flavell-lab/WormCurveFinder.jl
-          path: ./WormCurveFinder.jl
-          token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
-      - uses: actions/checkout@master
-        with:
-          repository: flavell-lab/Clustering.jl
-          path: ./Clustering.jl
-          token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
-      - uses: actions/checkout@master
-        with:
-          repository: flavell-lab/WormFeatureDetector.jl
-          path: ./WormFeatureDetector.jl
-          token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
-      - uses: actions/checkout@master
-        with:
-          repository: flavell-lab/SegmentationTools.jl
-          path: ./SegmentationTools.jl
-          token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
-      - uses: actions/checkout@master
-        with:
-          repository: flavell-lab/SLURMManager.jl
-          path: ./SLURMManager.jl
-          token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
-      - uses: actions/checkout@master
-        with:
-          repository: flavell-lab/RegistrationGraph.jl
-          path: ./SLURMManager.jl
-          token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
-      - uses: actions/checkout@master
-        with:
-          repository: flavell-lab/ExtractRegisteredData.jl
-          path: ./SLURMManager.jl
-          token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
-      - uses: actions/checkout@master
-        with:
-          repository: flavell-lab/unet2d
-          path: ./unet2d
           token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - name: Install Julia Python environment
         run: julia --project=docs/ -e 'using Pkg; 
