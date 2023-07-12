@@ -35,6 +35,11 @@ jobs:
           repository: flavell-lab/UNet2D.jl
           path: ./UNet2D.jl
           token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
+      - uses: actions/checkout@master
+        with:
+          repository: flavell-lab/unet2d
+          path: ./unet2d
+          token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - name: Install Julia Python environment
         run: julia --project=docs/ -e 'using Pkg; 
           Pkg.add("PyCall");
