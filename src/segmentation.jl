@@ -308,7 +308,7 @@ function compute_worm_spline!(param, path_h5, worm_seg_model, worm_thickness, me
 
     omega_flag = false
 
-    @showprogress for idx in rng
+    for idx in rng
         try
             if idx in keys(is_omega_dict) && is_omega_dict[idx]
                 omega_flag = true
