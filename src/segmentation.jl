@@ -400,7 +400,7 @@ function compute_worm_thickness(param, path_h5, worm_seg_model, med_axis_dict, i
     dists = zeros(length([idx for idx in keys(lengths) if lengths[idx] >= low && lengths[idx] <= high]), low)
 
     count = 1
-    @showprogress for idx in keys(lengths)
+    for idx in keys(lengths)
         if lengths[idx] >= low && lengths[idx] <= high
             f = h5open(path_h5)
             img_raw = f["img_nir"][:,:,idx]
